@@ -1,5 +1,5 @@
 # app.py
-from flask import Flask, render_template, request, jsonify
+from app import Flask, render_template, request, jsonify
 from yt_reports import generate_channel_report, load_config, get_channel_videos, get_video_subtitles
 import googleapiclient.discovery
 import re
