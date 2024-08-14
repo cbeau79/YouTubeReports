@@ -10,17 +10,22 @@ def index():
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
-    channel_url = request.form['channel_url']
+    data = request.get_json()
+    
+    if not data or 'channel_url' not in data:
+        return jsonify({'error': 'Invalid request. Please provide a channel_url.'}), 400
+    
+    channel_url = data['channel_url']
     
     channel_id = extract_channel_id(channel_url)
     
     if not channel_id:
-        return jsonify({'error': 'Invalid YouTube channel URL'})
+        return jsonify({'error': 'Invalid YouTube channel URL'}), 400
     
     channel_data = fetch_channel_data(channel_id)
     
     if not channel_data:
-        return jsonify({'error': 'Unable to fetch channel data'})
+        return jsonify({'error': 'Unable to fetch channel data'}), 500
     
     report = generate_channel_report(channel_data)
     

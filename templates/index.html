@@ -3,8 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Reports</title>
+    <title>YouTube Channel Analyzer</title>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        #report {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            width: 70%;
+            padding: 10px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+    </style>
 </head>
 <body>
     <h1>YouTube Channel Analyzer</h1>
@@ -18,13 +58,21 @@
         document.getElementById('analyzeForm').addEventListener('submit', function(e) {
             e.preventDefault();
             var channelUrl = document.getElementById('channelUrl').value;
-            axios.post('/analyze', { channel_url: channelUrl })
-                .then(function (response) {
-                    document.getElementById('report').innerHTML = response.data.report;
-                })
-                .catch(function (error) {
-                    console.error('Error:', error);
-                });
+            document.getElementById('report').innerHTML = 'Analyzing...';
+            axios.post('/analyze', { channel_url: channelUrl }, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(function (response) {
+                // Convert Markdown to HTML
+                var htmlReport = marked.parse(response.data.report);
+                document.getElementById('report').innerHTML = htmlReport;
+            })
+            .catch(function (error) {
+                console.error('Error:', error);
+                document.getElementById('report').innerHTML = 'An error occurred: ' + error.response.data.error;
+            });
         });
     </script>
 </body>

@@ -5,6 +5,7 @@ import googleapiclient.discovery
 from urllib.parse import urlparse, parse_qs
 import isodate
 import requests
+import re
 import xml.etree.ElementTree as ET
 from openai import OpenAI
 
@@ -26,6 +27,7 @@ config = load_config()
 API_KEY = config['youtube_api_key']
 OPENAI_API_KEY = config['openai_api_key']
 MAX_VIDEOS = config['max_videos_to_fetch']
+MAX_VIDEOS_FOR_SUBTITLES = config['max_videos_for_subtitles']
 OPENAI_MODEL = config['openai_model']
 MAX_TOKENS = config['max_tokens']
 
@@ -38,11 +40,26 @@ youtube = googleapiclient.discovery.build("youtube", "v3", developerKey=API_KEY)
 def extract_channel_id(url):
     parsed_url = urlparse(url)
     
-    if 'youtube.com' in parsed_url.netloc:
-        query = parse_qs(parsed_url.query)
+    if 'youtube.com' in parsed_url.netloc or 'youtu.be' in parsed_url.netloc:
         path = parsed_url.path
+        query = parse_qs(parsed_url.query)
         
-        if path.startswith('/channel/'):
+        if path.startswith('/@'):
+            # Handle @username format
+            username = path[2:]  # Remove the leading '/@'
+            try:
+                channel_response = youtube.search().list(
+                    part="snippet",
+                    q=username,
+                    type="channel",
+                    maxResults=1
+                ).execute()
+                if 'items' in channel_response and channel_response['items']:
+                    return channel_response['items'][0]['snippet']['channelId']
+            except Exception as e:
+                print(f"Error fetching channel ID for @{username}: {e}")
+                return None
+        elif path.startswith('/channel/'):
             return path.split('/')[2]
         elif 'v' in query:
             video_id = query['v'][0]
@@ -53,21 +70,22 @@ def extract_channel_id(url):
                 ).execute()
                 if 'items' in video_response:
                     return video_response['items'][0]['snippet']['channelId']
-            except:
+            except Exception as e:
+                print(f"Error fetching channel ID for video {video_id}: {e}")
                 return None
-        elif 'c' in query:
-            return query['c'][0]
         elif path.startswith('/c/') or path.startswith('/user/'):
             custom_name = path.split('/')[2]
             try:
                 channel_response = youtube.search().list(
                     part="snippet",
                     q=custom_name,
-                    type="channel"
+                    type="channel",
+                    maxResults=1
                 ).execute()
-                if 'items' in channel_response:
+                if 'items' in channel_response and channel_response['items']:
                     return channel_response['items'][0]['snippet']['channelId']
-            except:
+            except Exception as e:
+                print(f"Error fetching channel ID for {custom_name}: {e}")
                 return None
     
     return None
@@ -126,43 +144,78 @@ def get_channel_videos(channel_id, max_results):
     return videos[:max_results]
 
 def get_video_subtitles(video_id):
+    """
+    Fetch the subtitle file for a given video ID without authentication.
+    Returns the subtitles as a string with only the text content, if found, None otherwise.
+    """
+    print(f"\nDEBUG: Starting subtitle retrieval for video ID: {video_id}")
     try:
+        # First, we need to get the available caption tracks
         url = f'https://youtube.com/watch?v={video_id}'
+        print(f"DEBUG: Fetching video page from URL: {url}")
         response = requests.get(url)
         response.raise_for_status()
         
+        print(f"DEBUG: Video page fetched successfully. Status code: {response.status_code}")
+        print(f"DEBUG: Content length: {len(response.text)} characters")
+        
+        # Extract the caption track URL from the video page
         captions_regex = r'"captions":.*?"captionTracks":(\[.*?\])'
         captions_match = re.search(captions_regex, response.text)
         
         if not captions_match:
+            print("DEBUG: No caption tracks found in the video page")
             return None
         
+        print("DEBUG: Caption tracks found in the video page")
         captions_data = json.loads(captions_match.group(1))
         
+        # Find the English auto-generated captions
         subtitle_url = None
         for caption in captions_data:
+            print(f"DEBUG: Examining caption")
             if caption.get('vssId', '').endswith('.en'):
                 subtitle_url = caption['baseUrl']
+                print(f"DEBUG: Found English caption URL: {subtitle_url}")
                 break
         
         if not subtitle_url:
+            print("DEBUG: No English auto-generated captions found")
             return None
         
+        # Fetch the actual subtitle content
+        print(f"DEBUG: Fetching subtitle content from URL: {subtitle_url}")
         subtitle_response = requests.get(subtitle_url)
         subtitle_response.raise_for_status()
         
-        root = ET.fromstring(subtitle_response.text)
+        print(f"DEBUG: Subtitle content fetched successfully. Status code: {subtitle_response.status_code}")
+        print(f"DEBUG: Subtitle content length: {len(subtitle_response.text)} characters")
+
+       # Parse the XML content
+        try:
+            root = ET.fromstring(subtitle_response.text)
+            print("DEBUG: XML parsed successfully")
+        except ET.ParseError as e:
+            print(f"DEBUG: Error parsing XML: {e}")
+            return None
         
+        # Extract only the text content of the subtitles
         subtitles = []
         for text in root.findall('.//text'):
             content = text.text
             if content:
                 subtitles.append(content)
         
+        print(f"DEBUG: Extracted {len(subtitles)} subtitle entries")
+
+        if subtitles:
+            print(f"DEBUG: First subtitle entry: {subtitles[0]}")
+        
+        # Join all subtitle texts into a single string
         return ' '.join(subtitles)
 
-    except Exception as e:
-        print(f"An error occurred while fetching subtitles: {e}")
+    except requests.RequestException as e:
+        print(f"DEBUG: An error occurred while fetching subtitles: {e}")
         return None
 
 def generate_channel_report(channel_data):
@@ -184,8 +237,8 @@ def generate_channel_report(channel_data):
         3. Average number of videos published per week 
     3. Trends: 
         1. List 3 notable trends, each with a brief explanation
-    4. Writing style:
-        1. Using the subtitle data only, do an analysis of the writing style of the videos. It should be two paragraphs long.
+    4. Oratry style:
+        1. Using the subtitle data only, do an analysis of the oratry style of the videos. It should be two paragraphs long. For each point, try to use an example quote from the subtitle text for illustration.
     5. Recommendations: 
         1. Provide 3 data-driven recommendations, each with a brief rationale
 
@@ -223,17 +276,24 @@ def fetch_channel_data(channel_id):
                 'videos': []
             }
             
+            # Get info for the most recent videos
             channel_data['videos'] = get_channel_videos(channel_id, MAX_VIDEOS)
             
-            for video in channel_data['videos']:
+            # Sort videos by date (most recent first) and get subtitles for only the most recent ones
+            channel_data['videos'].sort(key=lambda x: x['date_published'], reverse=True)
+            
+            for video in channel_data['videos'][:MAX_VIDEOS_FOR_SUBTITLES]:
                 subtitles = get_video_subtitles(video['video_id'])
                 if subtitles:
                     video['subtitles'] = subtitles
+                    print(f"Retrieved subtitles for video: {video['title']}")
+                else:
+                    print(f"No subtitles available for video: {video['title']}")
 
             return channel_data
         else:
             return None
 
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"An error occurred while fetching channel data: {e}")
         return None
