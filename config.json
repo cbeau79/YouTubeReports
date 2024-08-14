@@ -1,8 +1,0 @@
-{
-  "youtube_api_key": "AIzaSyAp-8A6b9WKLBB9x9_3kzNagsewGybKE04",
-  "openai_api_key": "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",
-  "youtube_channel_id": "UCX6OQ3DkcsbYNE6H8uQQuVA",
-  "max_videos_to_fetch": 5,
-  "openai_model": "gpt-4o-mini",
-  "max_tokens": 4000
-}
