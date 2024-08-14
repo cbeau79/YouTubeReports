@@ -16,10 +16,12 @@ MAX_VIDEOS = config['max_videos_to_fetch']
 # Initialize YouTube API client
 youtube = googleapiclient.discovery.build("youtube", "v3", developerKey=API_KEY)
 
+# Index Route
 @app.route('/')
 def index():
     return render_template('index.html')
 
+# Analyze Route
 @app.route('/analyze', methods=['POST'])
 def analyze():
     channel_url = request.form['channel_url']
