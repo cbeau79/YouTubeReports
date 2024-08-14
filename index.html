@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Channel Analyzer</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>YouTube Channel Analyzer</h1>
+    <form id="analyzeForm">
+        <input type="text" id="channelUrl" placeholder="Enter YouTube Channel URL" required>
+        <button type="submit">Analyze</button>
+    </form>
+    <div id="report"></div>
+
+    <script>
+        document.getElementById('analyzeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var channelUrl = document.getElementById('channelUrl').value;
+            axios.post('/analyze', { channel_url: channelUrl })
+                .then(function (response) {
+                    document.getElementById('report').innerHTML = response.data.report;
+                })
+                .catch(function (error) {
+                    console.error('Error:', error);
+                });
+        });
+    </script>
+</body>
+</html>
