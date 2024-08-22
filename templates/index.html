@@ -3,152 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Reports - Channel Analyzer</title>
+    <title>YouTube Channel Analyzer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold text-center mb-8">YouTube Reports - Channel Analyzer</h1>
+        <h1 class="text-3xl font-bold mb-4">YouTube Channel Analyzer</h1>
         
-        <div class="mb-8">
+        <div class="mb-4">
             <input type="text" id="channelUrl" placeholder="Enter YouTube Channel URL" class="w-full p-2 border rounded">
-            <button onclick="analyzeChannel()" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Analyze Channel</button>
         </div>
+        
+        <button onclick="analyzeChannel()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Analyze
+        </button>
 
-        <div id="loading" class="hidden text-center">
-            <p class="text-lg">Analyzing channel data...</p>
-            <div class="loader mt-4"></div>
-        </div>
+        <div id="loading" class="mt-4 hidden">Analyzing channel...</div>
 
-        <div id="report" class="hidden">
-            <h2 class="text-2xl font-semibold mb-4">Channel Analysis Report</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white p-6 rounded shadow">
-                    <h3 class="text-xl font-semibold mb-3">Executive Summary</h3>
-                    <div id="executiveSummary"></div>
-                </div>
-                
-                <div class="bg-white p-6 rounded shadow">
-                    <h3 class="text-xl font-semibold mb-3">Key Metrics</h3>
-                    <div id="keyMetrics"></div>
-                </div>
-                
-                <div class="bg-white p-6 rounded shadow">
-                    <h3 class="text-xl font-semibold mb-3">Trends</h3>
-                    <div id="trends"></div>
-                </div>
-                
-                <div class="bg-white p-6 rounded shadow">
-                    <h3 class="text-xl font-semibold mb-3">Oratory Style</h3>
-                    <div id="oratoryStyle"></div>
-                </div>
-                
-                <div class="bg-white p-6 rounded shadow">
-                    <h3 class="text-xl font-semibold mb-3">Recommendations</h3>
-                    <div id="recommendations"></div>
-                </div>
-                
-                <div class="bg-white p-6 rounded shadow">
-                    <h3 class="text-xl font-semibold mb-3">Views Distribution</h3>
-                    <canvas id="viewsChart"></canvas>
-                </div>
-            </div>
-        </div>
+        <div id="report" class="mt-8"></div>
     </div>
 
-    <style>
-        .loader {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #3498db;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
-
     <script>
-        function analyzeChannel() {
+        async function analyzeChannel() {
             const channelUrl = document.getElementById('channelUrl').value;
-            
-            if (!channelUrl) {
-                alert('Please enter a valid YouTube channel URL');
-                return;
+            const loadingDiv = document.getElementById('loading');
+            const reportDiv = document.getElementById('report');
+
+            loadingDiv.classList.remove('hidden');
+            reportDiv.innerHTML = '';
+
+            try {
+                const response = await axios.post('/analyze', { channel_url: channelUrl });
+                const report = response.data.report;
+                displayReport(report);
+            } catch (error) {
+                console.error('Error details:', error.response?.data);
+                reportDiv.innerHTML = `<p class="text-red-500">Error: ${error.response?.data?.error || 'An unexpected error occurred'}</p>`;
+            } finally {
+                loadingDiv.classList.add('hidden');
             }
-
-            document.getElementById('loading').classList.remove('hidden');
-            document.getElementById('report').classList.add('hidden');
-
-            axios.post('/analyze', { channel_url: channelUrl })
-                .then(response => {
-                    displayReport(response.data.report);
-                    document.getElementById('loading').classList.add('hidden');
-                    document.getElementById('report').classList.remove('hidden');
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while analyzing the channel. Please try again.');
-                    document.getElementById('loading').classList.add('hidden');
-                });
         }
 
         function displayReport(report) {
-            const reportData = parseReportData(report);
-
-            document.getElementById('executiveSummary').innerHTML = reportData.executiveSummary;
-            document.getElementById('keyMetrics').innerHTML = reportData.keyMetrics;
-            document.getElementById('trends').innerHTML = reportData.trends;
-            document.getElementById('oratoryStyle').innerHTML = reportData.oratoryStyle;
-            document.getElementById('recommendations').innerHTML = reportData.recommendations;
-
-            createViewsChart(reportData.viewsData);
-        }
-
-        function parseReportData(report) {
-            // This is a simple parser. In a real-world scenario, you'd want to use a more robust parsing method.
-            const sections = report.split(/\d+\.\s/);
-            return {
-                executiveSummary: sections[1] || 'No data available',
-                keyMetrics: sections[2] || 'No data available',
-                trends: sections[3] || 'No data available',
-                oratoryStyle: sections[4] || 'No data available',
-                recommendations: sections[5] || 'No data available',
-                viewsData: [12000, 19000, 3000, 5000, 2000, 3000] // Example data, replace with actual data
-            };
-        }
-
-        function createViewsChart(viewsData) {
-            const ctx = document.getElementById('viewsChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Video 1', 'Video 2', 'Video 3', 'Video 4', 'Video 5', 'Video 6'],
-                    datasets: [{
-                        label: '# of Views',
-                        data: viewsData,
-                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
+            const reportDiv = document.getElementById('report');
+            reportDiv.innerHTML = `
+                <h2 class="text-2xl font-bold mb-4">Channel Report</h2>
+                
+                <h3 class="text-xl font-semibold mt-4">1. Executive Summary</h3>
+                <p class="mb-2">${report['Executive Summary']['Content summary']}</p>
+                <p class="mb-2">${report['Executive Summary']['Channel hosts and personalities']}</p>
+                <p class="mb-2">${report['Executive Summary']['Channel prominence and competitive landscape']}</p>
+                
+                <h3 class="text-xl font-semibold mt-4">2. Key Metrics</h3>
+                <p class="mb-2"><strong>Average views per video:</strong> ${report['Key Metrics']['Average views per video']}</p>
+                <p class="mb-2"><strong>Top-performing video category:</strong> ${report['Key Metrics']['Top-performing video category']}</p>
+                <p class="mb-2"><strong>Average number of videos published per week:</strong> ${report['Key Metrics']['Average number of videos published per week']}</p>
+                
+                <h3 class="text-xl font-semibold mt-4">3. Trends</h3>
+                <ul class="list-disc pl-5">
+                    ${report['Trends'].map(trend => `<li class="mb-2">${trend}</li>`).join('')}
+                </ul>
+                
+                <h3 class="text-xl font-semibold mt-4">4. Oratory Style</h3>
+                <p class="mb-2">${report['Oratory Style']}</p>
+                
+                <h3 class="text-xl font-semibold mt-4">5. Recommendations</h3>
+                <ul class="list-disc pl-5">
+                    ${report['Recommendations'].map(rec => `<li class="mb-2">${rec}</li>`).join('')}
+                </ul>
+            `;
         }
     </script>
 </body>

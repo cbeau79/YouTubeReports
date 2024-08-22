@@ -8,6 +8,7 @@ import requests
 import re
 import xml.etree.ElementTree as ET
 from openai import OpenAI
+from datetime import datetime
 
 def load_config():
     try:
@@ -218,8 +219,25 @@ def get_video_subtitles(video_id):
         print(f"DEBUG: An error occurred while fetching subtitles: {e}")
         return None
 
+def save_json_to_file(data, channel_id):
+    if not os.path.exists('reports'):
+        os.makedirs('reports')
+    
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"reports/channel_data_{timestamp}_{channel_id}.json"
+    
+    with open(filename, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=2)
+    
+    print(f"Channel data saved to {filename}")
+    return filename
+
 def generate_channel_report(channel_data):
     full_data_json = json.dumps(channel_data, indent=2)
+    
+    # Save the JSON data before sending to OpenAI
+    json_filename = save_json_to_file(channel_data, channel_data['channel_id'])
+    print(f"Channel data saved to {json_filename}")
 
     prompt = f"""
     You are a YouTube content consultant. Analyze the following complete YouTube channel data and provide a comprehensive report. The data is provided in JSON format:
@@ -242,7 +260,7 @@ def generate_channel_report(channel_data):
     5. Recommendations: 
         1. Provide 3 data-driven recommendations, each with a brief rationale
 
-    Provide your analysis in a clear, structured format. Use specific data points to support your insights and recommendations. If you identify any limitations in the data provided, please mention them. Do not rush to come up with an answer, take your time.
+    Provide your analysis in a clear, structured format. Use specific data points to support your insights and recommendations. If you identify any limitations in the data provided, please mention them. Do not rush to come up with an answer, take your time. Return the results as a JSON file.
     """
 
     try:
@@ -269,6 +287,7 @@ def fetch_channel_data(channel_id):
         if 'items' in channel_response:
             channel_info = channel_response['items'][0]
             channel_data = {
+                'channel_id': channel_id,
                 'title': channel_info['snippet']['title'],
                 'description': channel_info['snippet']['description'],
                 'subscriber_count': channel_info['statistics']['subscriberCount'],
