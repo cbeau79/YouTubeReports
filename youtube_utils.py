@@ -1,5 +1,6 @@
 # youtube_utils.py
 import os
+import ast
 import json
 import googleapiclient.discovery
 from urllib.parse import urlparse, parse_qs
@@ -232,6 +233,20 @@ def save_json_to_file(data, channel_id):
     print(f"Channel data saved to {filename}")
     return filename
 
+def parse_json_string(input_string):
+    print(f"Attempting to parse_json_string - Input string:" + input_string)
+    # Remove the triple backticks and "json" from the beginning and end
+    # clean_string = input_string.strip('`').replace('```json\n', '').replace('\n```', '')
+    # print(f"Clean JSON string:" + clean_string)
+
+    try:
+        # Use ast.literal_eval to safely evaluate the string as a Python literal
+        json_data = ast.literal_eval(input_string)
+        return json_data
+    except (ValueError, SyntaxError) as e:
+        print(f"Error parsing JSON string: {e}")
+        return None
+
 def generate_channel_report(channel_data):
     full_data_json = json.dumps(channel_data, indent=2)
     
@@ -272,7 +287,13 @@ def generate_channel_report(channel_data):
             ],
             max_tokens=MAX_TOKENS
         )
-        return response.choices[0].message.content
+        
+        # Save the JSON data after receiving it from OpenAI
+        openai_response = parse_json_string(response.choices[0].message.content)
+        json_filename = save_json_to_file(openai_response, channel_data['channel_id'])
+        print(f"OpenAI results saved to {json_filename}")
+        
+        return openai_response
     except Exception as e:
         print(f"An error occurred while generating the report: {e}")
         return ""
