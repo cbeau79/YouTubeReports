@@ -1,0 +1,137 @@
+{
+  "consultation_report": {
+    "title": "",
+    "sections": [
+      {
+        "number": 1,
+        "subtitle": "Executive Summary",
+        "content": [
+            {
+                "sections": [
+                    {
+                        "number": 1,
+                        "subtitle": "Content Summary",
+                        "content": ""
+                    },
+                    {
+                        "number": 2,
+                        "subtitle": "Channel hosts and personalities",
+                        "content": ""
+                    },
+                    {
+                        "number": 3,
+                        "subtitle": "Channel prominence and competitive landscape",
+                        "content": ""
+                    }
+                ]
+            }
+        ]
+      },
+      {
+        "number": 2,
+        "subtitle": "Key Metrics",
+        "content": [
+            {
+                "sections": [
+                    {
+                        "number": 1,
+                        "subtitle": "Average views per video",
+                        "content": ""
+                    },
+                    {
+                        "number": 2,
+                        "subtitle": "Top performing video category",
+                        "content": ""
+                    },
+                    {
+                        "number": 3,
+                        "subtitle": "Average number of videos published per week",
+                        "content": ""
+                    }
+                ]
+            }
+        ]
+      },
+      {
+        "number": 3,
+        "subtitle": "Trends",
+        "content": [
+            {
+                "sections": [
+                    {
+                        "number": 1,
+                        "subtitle": "",
+                        "content": ""
+                    },
+                    {
+                        "number": 2,
+                        "subtitle": "",
+                        "content": ""
+                    },
+                    {
+                        "number": 3,
+                        "subtitle": "",
+                        "content": ""
+                    }
+                ]
+            }
+        ]
+      },
+      {
+        "number": 4,
+        "subtitle": "Oratry Style",
+        "content": [
+            {
+                "sections": [
+                    {
+                        "number": 1,
+                        "subtitle": "",
+                        "content": ""
+                    },
+                    {
+                        "number": 2,
+                        "subtitle": "",
+                        "content": ""
+                    },
+                    {
+                        "number": 3,
+                        "subtitle": "",
+                        "content": ""
+                    }
+                ]
+            }
+        ]
+      },
+      {
+        "number": 5,
+        "subtitle": "Recommendations",
+        "content": [
+            {
+                "sections": [
+                    {
+                        "number": 1,
+                        "subtitle": "",
+                        "content": ""
+                    },
+                    {
+                        "number": 2,
+                        "subtitle": "",
+                        "content": ""
+                    },
+                    {
+                        "number": 3,
+                        "subtitle": "",
+                        "content": ""
+                    }
+                ]
+            }
+        ]
+      },
+      {
+        "number": 6,
+        "subtitle": "Limitations",
+        "content": ""
+      }
+    ]
+  }
+}

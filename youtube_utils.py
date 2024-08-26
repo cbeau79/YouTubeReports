@@ -234,69 +234,38 @@ def save_json_to_file(data, channel_id):
     return filename
 
 def parse_json_string(input_string):
-    print(f"Attempting to parse_json_string - Input string:" + input_string)
-    # Remove the triple backticks and "json" from the beginning and end
-    # clean_string = input_string.strip('`').replace('```json\n', '').replace('\n```', '')
-    # print(f"Clean JSON string:" + clean_string)
-
-    try:
-        # Use ast.literal_eval to safely evaluate the string as a Python literal
-        json_data = ast.literal_eval(input_string)
-        return json_data
-    except (ValueError, SyntaxError) as e:
-        print(f"Error parsing JSON string: {e}")
-        return None
-
-def generate_channel_report(channel_data):
-    full_data_json = json.dumps(channel_data, indent=2)
+    print("\n---\n")
+    print(input_string)
+    print("\n---\n")
     
-    # Save the JSON data before sending to OpenAI
-    json_filename = save_json_to_file(channel_data, channel_data['channel_id'])
-    print(f"Channel data saved to {json_filename}")
+    # Unescape the string
+    clean_string = input_string.encode().decode('unicode_escape')
+    print(clean_string)
+    print("\n---\n")
+    
+    # Strip the outer quotation marks
+    clean_string = clean_string.strip('"')
+    print(clean_string)
+    print("\n---\n")
 
-    prompt = f"""
-    You are a YouTube content consultant. Analyze the following complete YouTube channel data and provide a comprehensive report. The data is provided in JSON format:
+    # Strip the tripple backticks
+    clean_string = clean_string.strip('```')
+    print(clean_string)
+    print("\n---\n")
 
-    {full_data_json}
-
-    Analyze this data and present the key findings in the following format: 
-    1. Executive Summary
-        1. Content summary (1 paragraph)
-        2. Channel hosts and personalities (1 paragraph - if you don't know anything about the hosts and personalities, it's ok to say so)
-        3. Channel prominence and competitive landscape (1 paragraph)
-    2. Key Metrics (1-2 sentences of context and rationale for each): 
-        1. Average views per video 
-        2. Top-performing video category 
-        3. Average number of videos published per week 
-    3. Trends: 
-        1. List 3 notable trends, each with a brief explanation
-    4. Oratry style:
-        1. Using the subtitle data only, do an analysis of the oratry style of the videos. It should be two paragraphs long. For each point, try to use an example quote from the subtitle text for illustration.
-    5. Recommendations: 
-        1. Provide 3 data-driven recommendations, each with a brief rationale
-
-    Provide your analysis in a clear, structured format. Use specific data points to support your insights and recommendations. If you identify any limitations in the data provided, please mention them. Do not rush to come up with an answer, take your time. Return the results as a JSON file.
-    """
+    # Remove the json at the start, if it's there
+    if clean_string.startswith('json'):
+        clean_string = clean_string[4:]
+    print(clean_string)
+    print("\n---\n")
 
     try:
-        response = client.chat.completions.create(
-            model=OPENAI_MODEL,
-            messages=[
-                {"role": "system", "content": "You are a YouTube content consultant."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=MAX_TOKENS
-        )
-        
-        # Save the JSON data after receiving it from OpenAI
-        openai_response = parse_json_string(response.choices[0].message.content)
-        json_filename = save_json_to_file(openai_response, channel_data['channel_id'])
-        print(f"OpenAI results saved to {json_filename}")
-        
-        return openai_response
-    except Exception as e:
-        print(f"An error occurred while generating the report: {e}")
-        return ""
+        # Parse the string as JSON
+        json_data = json.loads(clean_string)
+        return json_data
+    except json.JSONDecodeError as e:
+        print(f"youtube_utils.py: Error parsing JSON string: {e}")
+        return None
 
 def fetch_channel_data(channel_id):
     try:
