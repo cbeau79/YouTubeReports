@@ -8,7 +8,6 @@ import isodate
 import requests
 import re
 import xml.etree.ElementTree as ET
-from openai import OpenAI
 from datetime import datetime
 
 def load_config():
@@ -32,9 +31,6 @@ MAX_VIDEOS = config['max_videos_to_fetch']
 MAX_VIDEOS_FOR_SUBTITLES = config['max_videos_for_subtitles']
 OPENAI_MODEL = config['openai_model']
 MAX_TOKENS = config['max_tokens']
-
-# Initialize the OpenAI client
-client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Initialize YouTube API client
 youtube = googleapiclient.discovery.build("youtube", "v3", developerKey=API_KEY)
@@ -128,15 +124,17 @@ def get_channel_videos(channel_id, max_results):
             if not is_short:
                 videos.append({
                     'title': video['snippet']['title'],
+                    'description': video['snippet']['description'],
                     'length': int(duration_seconds),
                     'date_published': video['snippet']['publishedAt'],
                     'tags': video['snippet'].get('tags', []),
-                    'video_id': video['id'],
+                    'youtube_video_id': video['id'],
+                    'youtube_category_id': video['snippet'].get('categoryId', 'Unknown'),
                     'views': int(video['statistics'].get('viewCount', 0)),
-                    'category_id': video['snippet'].get('categoryId', 'Unknown'),
                     'like_count': int(video['statistics'].get('likeCount', 0)),
                     'comment_count': int(video['statistics'].get('commentCount', 0)),
-                    'thumbnail_url': video['snippet']['thumbnails']['default']['url']
+                    'thumbnail_url': video['snippet']['thumbnails']['default']['url'],
+                    'channel_title': video['snippet']['channelTitle']
                 })
 
         next_page_token = response.get('nextPageToken')
@@ -150,16 +148,11 @@ def get_video_subtitles(video_id):
     Fetch the subtitle file for a given video ID without authentication.
     Returns the subtitles as a string with only the text content, if found, None otherwise.
     """
-    print(f"\nDEBUG: Starting subtitle retrieval for video ID: {video_id}")
     try:
         # First, we need to get the available caption tracks
         url = f'https://youtube.com/watch?v={video_id}'
-        print(f"DEBUG: Fetching video page from URL: {url}")
         response = requests.get(url)
         response.raise_for_status()
-        
-        print(f"DEBUG: Video page fetched successfully. Status code: {response.status_code}")
-        print(f"DEBUG: Content length: {len(response.text)} characters")
         
         # Extract the caption track URL from the video page
         captions_regex = r'"captions":.*?"captionTracks":(\[.*?\])'
@@ -169,16 +162,13 @@ def get_video_subtitles(video_id):
             print("DEBUG: No caption tracks found in the video page")
             return None
         
-        print("DEBUG: Caption tracks found in the video page")
         captions_data = json.loads(captions_match.group(1))
         
         # Find the English auto-generated captions
         subtitle_url = None
         for caption in captions_data:
-            print(f"DEBUG: Examining caption")
             if caption.get('vssId', '').endswith('.en'):
                 subtitle_url = caption['baseUrl']
-                print(f"DEBUG: Found English caption URL: {subtitle_url}")
                 break
         
         if not subtitle_url:
@@ -186,17 +176,12 @@ def get_video_subtitles(video_id):
             return None
         
         # Fetch the actual subtitle content
-        print(f"DEBUG: Fetching subtitle content from URL: {subtitle_url}")
         subtitle_response = requests.get(subtitle_url)
         subtitle_response.raise_for_status()
-        
-        print(f"DEBUG: Subtitle content fetched successfully. Status code: {subtitle_response.status_code}")
-        print(f"DEBUG: Subtitle content length: {len(subtitle_response.text)} characters")
 
        # Parse the XML content
         try:
             root = ET.fromstring(subtitle_response.text)
-            print("DEBUG: XML parsed successfully")
         except ET.ParseError as e:
             print(f"DEBUG: Error parsing XML: {e}")
             return None
@@ -207,11 +192,6 @@ def get_video_subtitles(video_id):
             content = text.text
             if content:
                 subtitles.append(content)
-        
-        print(f"DEBUG: Extracted {len(subtitles)} subtitle entries")
-
-        if subtitles:
-            print(f"DEBUG: First subtitle entry: {subtitles[0]}")
         
         # Join all subtitle texts into a single string
         return ' '.join(subtitles)
@@ -232,6 +212,51 @@ def save_json_to_file(data, channel_id):
     
     print(f"Channel data saved to {filename}")
     return filename
+
+def fetch_channel_data(channel_id):
+    try:
+        channel_response = youtube.channels().list(
+            part="snippet,statistics",
+            id=channel_id
+        ).execute()
+
+        if 'items' in channel_response:
+            channel_info = channel_response['items'][0]
+            channel_data = {
+                'channel_id': channel_id,
+                'title': channel_info['snippet']['title'],
+                'description': channel_info['snippet']['description'],
+                'subscriber_count': channel_info['statistics']['subscriberCount'],
+                'total_view_count': channel_info['statistics']['viewCount'],
+                'videos': []
+            }
+            
+            # Get info for the most recent videos
+            channel_data['videos'] = get_channel_videos(channel_id, MAX_VIDEOS)
+            
+            # Sort videos by date (most recent first) and get subtitles for only the most recent ones
+            channel_data['videos'].sort(key=lambda x: x['date_published'], reverse=True)
+            
+            for video in channel_data['videos'][:MAX_VIDEOS_FOR_SUBTITLES]:
+                subtitles = get_video_subtitles(video['youtube_video_id'])
+                if subtitles:
+                    video['subtitles'] = subtitles
+                    print(f"Retrieved subtitles for video: {video['title']}")
+                else:
+                    print(f"No subtitles available for video: {video['title']}")
+
+            return channel_data
+        else:
+            return None
+
+    except Exception as e:
+        print(f"An error occurred while fetching channel data: {e}")
+        return None
+    
+
+# --------------------------------------------------------
+# - I DON'T BELIEVE THESE FUNCTIONS ARE BEING USED ANYMORE
+# --------------------------------------------------------
 
 def parse_json_string(input_string):
     print("\n---\n")
@@ -265,44 +290,4 @@ def parse_json_string(input_string):
         return json_data
     except json.JSONDecodeError as e:
         print(f"youtube_utils.py: Error parsing JSON string: {e}")
-        return None
-
-def fetch_channel_data(channel_id):
-    try:
-        channel_response = youtube.channels().list(
-            part="snippet,statistics",
-            id=channel_id
-        ).execute()
-
-        if 'items' in channel_response:
-            channel_info = channel_response['items'][0]
-            channel_data = {
-                'channel_id': channel_id,
-                'title': channel_info['snippet']['title'],
-                'description': channel_info['snippet']['description'],
-                'subscriber_count': channel_info['statistics']['subscriberCount'],
-                'total_view_count': channel_info['statistics']['viewCount'],
-                'videos': []
-            }
-            
-            # Get info for the most recent videos
-            channel_data['videos'] = get_channel_videos(channel_id, MAX_VIDEOS)
-            
-            # Sort videos by date (most recent first) and get subtitles for only the most recent ones
-            channel_data['videos'].sort(key=lambda x: x['date_published'], reverse=True)
-            
-            for video in channel_data['videos'][:MAX_VIDEOS_FOR_SUBTITLES]:
-                subtitles = get_video_subtitles(video['video_id'])
-                if subtitles:
-                    video['subtitles'] = subtitles
-                    print(f"Retrieved subtitles for video: {video['title']}")
-                else:
-                    print(f"No subtitles available for video: {video['title']}")
-
-            return channel_data
-        else:
-            return None
-
-    except Exception as e:
-        print(f"An error occurred while fetching channel data: {e}")
         return None

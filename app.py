@@ -9,16 +9,16 @@ from datetime import datetime
 import json
 
 app = Flask(__name__)
-logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 
-def save_report_to_file(channel_id, report):
+def save_report_to_file(id, title, report):
     # Create a 'reports' directory if it doesn't exist
     if not os.path.exists('reports'):
         os.makedirs('reports')
     
     # Generate a filename with timestamp and channel ID
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"reports/report_{timestamp}_{channel_id}.json"
+    filename = f"reports/report_{timestamp}_{id}_{title}.json"
     
     # Save the report as a JSON file
     with open(filename, 'w', encoding='utf-8') as f:
@@ -87,7 +87,7 @@ def analyze():
             return jsonify({'error': 'Failed to parse JSON report', 'details': str(e)}), 500
         
         # Save the report to a file
-        saved_filename = save_report_to_file(channel_id, report_dict)
+        saved_filename = save_report_to_file(channel_data["channel_id"], channel_data["title"], report_dict)
         app.logger.info(f"Report saved to file: {saved_filename}")
         
         return jsonify({'report': report_dict, 'saved_file': saved_filename})
