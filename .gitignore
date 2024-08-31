@@ -3,3 +3,4 @@ config/config.json
 config.json
 .DS_Store
 .ip_address.swp
+notion_utls.py

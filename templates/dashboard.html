@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <h2>Welcome, {{ current_user.username }}!</h2>
+    <a href="{{ url_for('logout') }}">Logout</a>
+    
+    <h3>Analyze a New Channel</h3>
+    <form id="analyze-form">
+        <input type="text" id="channel-url" placeholder="Enter YouTube channel URL" required>
+        <button type="submit">Analyze</button>
+    </form>
+    
+    <h3>Your Reports</h3>
+    {% if reports %}
+        <ul>
+        {% for report in reports %}
+            <li>
+                Channel: {{ report.channel_title }}
+                <button onclick='viewReport({{ report.id }}, {{ report.report_data|tojson|safe }})'>View Report</button>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No reports yet. Analyze a channel to get started!</p>
+    {% endif %}
+    
+    <div id="report-container"></div>
+
+    <script>
+        document.getElementById('analyze-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            analyzeChannel();
+        });
+
+        function analyzeChannel() {
+            const channelUrl = document.getElementById('channel-url').value;
+            fetch('/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({channel_url: channelUrl}),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    displayReport(data.report);
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('An error occurred while analyzing the channel.');
+            });
+        }
+
+        function viewReport(reportId, reportData) {
+            displayReport(reportData);
+        }
+
+        function displayReport(report) {
+            const reportContainer = document.getElementById('report-container');
+            let formattedReport;
+            try {
+                // If report is already a JavaScript object, stringify it
+                if (typeof report === 'object') {
+                    formattedReport = JSON.stringify(report, null, 2);
+                } else {
+                    // If report is a JSON string, parse and then stringify it
+                    formattedReport = JSON.stringify(JSON.parse(report), null, 2);
+                }
+            } catch (e) {
+                console.error('Error formatting report:', e);
+                formattedReport = 'Error: Unable to format report';
+            }
+            reportContainer.innerHTML = '<h3>Channel Report</h3><pre>' + formattedReport + '</pre>';
+        }
+    </script>
+</body>
+</html>

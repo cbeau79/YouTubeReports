@@ -88,6 +88,50 @@ def extract_channel_id(url):
     
     return None
 
+def get_video_data(video_id):
+    output = []
+
+    video_response = youtube.videos().list(
+        part="snippet,contentDetails,statistics",
+        id=video_id
+    ).execute()
+
+    # print(json.dumps(video_response, indent=2))
+
+    for video in video_response['items']:
+        duration = video['contentDetails'].get('duration', 'PT0S')
+        try:
+            duration_seconds = isodate.parse_duration(duration).total_seconds()
+        except isodate.ISO8601Error:
+            duration_seconds = 0
+
+        subtitles = get_video_subtitles(video_id)
+        if subtitles:
+            print(f"Retrieved subtitles for video: {video['snippet']['title']}")
+        else:
+            print(f"No subtitles available for video: {video['snippet']['title']}")
+
+        output.append({
+            'title': video['snippet']['title'],
+            'description': video['snippet']['description'],
+            'length': int(duration_seconds),
+            'date_published': video['snippet']['publishedAt'],
+            'tags': video['snippet'].get('tags', []),
+            'youtube_video_id': video['id'],
+            'youtube_category_id': video['snippet'].get('categoryId', 'Unknown'),
+            'views': int(video['statistics'].get('viewCount', 0)),
+            'like_count': int(video['statistics'].get('likeCount', 0)),
+            'comment_count': int(video['statistics'].get('commentCount', 0)),
+            'thumbnail_url': video['snippet']['thumbnails']['default']['url'],
+            'channel_title': video['snippet']['channelTitle'],
+            'subtitles': subtitles
+        })
+
+        print(json.dumps(output, indent=2))
+    
+    return output
+
+
 def get_channel_videos(channel_id, max_results):
     videos = []
     next_page_token = None

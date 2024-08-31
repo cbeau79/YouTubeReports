@@ -4,86 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YouTube Channel Analyzer</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
 </head>
-<body class="bg-slate-50">
-    <div class="container mx-auto px-4 py-8">
-        <h1 id="youtube-channel-analyzer" class="text-3xl font-bold mb-4">YouTube Channel Analyzer</h1>
-
-        <div class="mb-4">
-            <input type="text" id="channelUrl" placeholder="Enter YouTube channel URL" class="w-full p-2 border rounded">
-        </div>
-        <button id="analyzeBtn" class="bg-rose-600 text-rose-50 px-4 py-2 rounded">Analyze</button>
-
-        <div id="loading" class="mt-4 hidden">
-            Analyzing channel ...
-        </div>
-
-        <div id="report" class="mt-8"></div>
-        <div id="error" class="mt-4 text-rose-600"></div>
-    </div>
-
-    <script>
-        document.getElementById('analyzeBtn').addEventListener('click', function() {
-            const channelUrl = document.getElementById('channelUrl').value;
-            const loadingDiv = document.getElementById('loading');
-            const reportDiv = document.getElementById('report');
-            const errorDiv = document.getElementById('error');
-
-            loadingDiv.classList.remove('hidden');
-            reportDiv.innerHTML = '';
-            errorDiv.innerHTML = '';
-
-            axios.post('/analyze', { channel_url: channelUrl })
-                .then(function (response) {
-                    loadingDiv.classList.add('hidden');
-                    const report = response.data.report;
-                    displayReport(report);
-                })
-                .catch(function (error) {
-                    loadingDiv.classList.add('hidden');
-                    console.error('Error:', error);
-                    let errorMessage = 'An unexpected error occurred';
-                    if (error.response) {
-                        errorMessage = error.response.data.error || errorMessage;
-                        if (error.response.data.traceback) {
-                            errorMessage += '<br><br>Traceback:<br>' + error.response.data.traceback.replace(/\n/g, '<br>');
-                        }
-                    } else if (error.request) {
-                        errorMessage = 'The request was made but no response was received';
-                    } else {
-                        errorMessage = error.message;
-                    }
-                    errorDiv.innerHTML = `<p>Error: ${errorMessage}</p>`;
-                });
-        });
-
-        function displayReport(report) {
-            const reportDiv = document.getElementById('report');
-            const consultation = report.consultation_report;
-
-            let html = `<h2 class="text-2xl font-bold mb-4">${consultation.title}</h2>`;
-
-            consultation.sections.forEach(section => {
-                html += `<h3 class="text-xl font-semibold mt-4 mb-2">${section.number}. ${section.subtitle}</h3>`;
-                
-                if (Array.isArray(section.content)) {
-                    section.content.forEach(subSection => {
-                        if (subSection.sections) {
-                            subSection.sections.forEach(subSubSection => {
-                                html += `<h4 class="text-lg font-medium mt-3 mb-1">${subSubSection.number}. ${subSubSection.subtitle}</h4>`;
-                                html += `<p class="mb-2">${subSubSection.content}</p>`;
-                            });
-                        }
-                    });
-                } else {
-                    html += `<p class="mb-2">${section.content}</p>`;
-                }
-            });
-
-            reportDiv.innerHTML = html;
-        }
-    </script>
+<body>
+    <h1>YouTube Channel Analyzer</h1>
+    <!-- Display different content based on user authentication status -->
+    {% if current_user.is_authenticated %}
+        <p>Welcome, {{ current_user.username }}!</p>
+        <a href="{{ url_for('dashboard') }}">Go to Dashboard</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    {% else %}
+        <a href="{{ url_for('login') }}">Login</a>
+        <a href="{{ url_for('register') }}">Register</a>
+    {% endif %}
 </body>
 </html>

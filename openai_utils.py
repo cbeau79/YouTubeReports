@@ -75,7 +75,7 @@ def generate_channel_report(channel_data):
             model=OPENAI_MODEL,
             response_format={ "type": "json_object" },
             messages=[
-                {"role": "system", "content": "You are a YouTube content consultant."},
+                {"role": "system", "content": "You are a helpful YouTube content consultant who responds in JSON."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=4000
@@ -91,3 +91,43 @@ def generate_channel_report(channel_data):
         print(f"An error occurred while generating the report: {e}")
         return ""
 
+# report_data is a JSON formatted file containing channel data
+def generate_video_summary(video_data):
+    
+    # Craft the prompt
+    prompt = f"""
+    You are a YouTube content consultant. Analyze the following data about a YouTube video. The data is provided in JSON format:
+
+    {video_data}
+
+    Write a summary of this video. 
+    Provide at least 5 bullet points, but use as many as you need to, each with a detailed explanation and citing examples used in the original text.
+
+    Provide your analysis in a clear, structured format.
+    
+    Do not rush to come up with an answer, take your time.
+    """
+
+    # Interface with OpenAI
+    try:
+        response = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            # response_format={ "type": "json_object" },
+            messages=[
+                {"role": "system", "content": "You are a helpful YouTube researcher who is summarising videos for note taking"},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=4000
+        )
+
+        returned_string = response.choices[0].message.content 
+        # json_data = json.loads(returned_string)
+        # formated_string = returned_string.encode().decode('unicode_escape')
+        # print(formated_string)
+
+        print("NO")
+
+        return returned_string
+    except Exception as e:
+        print(f"An error occurred while generating the report: {e}")
+        return ""
