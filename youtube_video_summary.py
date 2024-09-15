@@ -28,4 +28,5 @@ while True:
     formatted_report = summary_report.encode().decode('unicode_escape')
 
     print("\nVIDEO SUMMARY REPORT\n-------------------- \n")
+    print("YOUTUBE URL: " + video_url)
     print(formatted_report)

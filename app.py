@@ -1,45 +1,51 @@
 # Import necessary modules
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, Response, stream_with_context
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from youtube_utils import extract_channel_id, fetch_channel_data
 from openai_utils import generate_channel_report
 import json
+import os
+import time
+from datetime import datetime
+from pytz import timezone
+from config import Config
 
-# Initialize Flask app
 app = Flask(__name__)
 
-# Configure app settings
-app.config['SECRET_KEY'] = 'your_secret_key_here'  # Replace with a real secret key for production
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'  # Use SQLite for simplicity in MVP
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Disable modification tracking for performance
+app.config.from_object(Config)
 
-# Initialize SQLAlchemy for database management
 db = SQLAlchemy(app)
-
-# Set up Flask-Login
+migrate = Migrate(app, db)
 login_manager = LoginManager(app)
-login_manager.login_view = 'login'  # Specify the route for the login page
+login_manager.login_view = 'login'
 
-# Define User model for database
+# Define your models here (User, Report, etc.)
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)  # Store hashed passwords
+    password = db.Column(db.String(200), nullable=False)
 
-# Define Report model for database
 class Report(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     channel_id = db.Column(db.String(100), nullable=False)
     channel_title = db.Column(db.String(200), nullable=False)
     report_data = db.Column(db.Text, nullable=False)
+    date_created = db.Column(db.DateTime, nullable=False)
 
 # User loader function for Flask-Login
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+# Helper function to get current time in local timezone
+def get_local_time():
+    local_tz = timezone('US/Pacific')  # Replace with your local timezone
+    return datetime.now(local_tz)
+
 
 # Route for the home page
 @app.route('/')
@@ -92,54 +98,85 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
-# Route for user dashboard
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    reports = Report.query.filter_by(user_id=current_user.id).all()
-    return render_template('dashboard.html', reports=reports)
-
-# Route for analyzing YouTube channels
+# Update the analyze route to include the date_created
 @app.route('/analyze', methods=['POST'])
 @login_required
 def analyze():
-    try:
-        data = request.get_json()
-        if not data or 'channel_url' not in data:
-            return jsonify({'error': 'Invalid request. Please provide a channel_url.'}), 400
+    def generate():
+        try:
+            data = request.get_json()
+            if not data or 'channel_url' not in data:
+                yield json.dumps({'error': 'Invalid request. Please provide a channel_url.'}) + '\n'
+                return
 
-        channel_url = data['channel_url']
-        channel_id = extract_channel_id(channel_url)
+            channel_url = data['channel_url']
+            yield json.dumps({'progress': 'Extracting channel ID...'}) + '\n'
+            channel_id = extract_channel_id(channel_url)
 
-        if not channel_id:
-            return jsonify({'error': 'Invalid YouTube channel URL'}), 400
+            if not channel_id:
+                yield json.dumps({'error': 'Invalid YouTube channel URL'}) + '\n'
+                return
+            
+            yield json.dumps({'progress': f'Channel ID: {channel_id}'}) + '\n'
+            yield json.dumps({'progress': 'Fetching channel data...'}) + '\n'
+            channel_data = fetch_channel_data(channel_id)
 
-        channel_data = fetch_channel_data(channel_id)
+            if not channel_data:
+                yield json.dumps({'error': 'Unable to fetch channel data'}) + '\n'
+                return
 
-        if not channel_data:
-            return jsonify({'error': 'Unable to fetch channel data'}), 500
+            channel_title = channel_data.get('title', 'Unknown Channel')
+            yield json.dumps({'progress': f'Analyzing channel: {channel_title}'}) + '\n'
 
-        channel_title = channel_data.get('title', 'Unknown Channel')
+            yield json.dumps({'progress': 'Generating report...'}) + '\n'
+            report_json = generate_channel_report(channel_data)
 
-        report_json = generate_channel_report(channel_data)
+            if not report_json:
+                yield json.dumps({'error': 'Failed to generate channel report'}) + '\n'
+                return
 
-        if not report_json:
-            return jsonify({'error': 'Failed to generate channel report'}), 500
+            new_report = Report(
+                user_id=current_user.id, 
+                channel_id=channel_id,
+                channel_title=channel_title,
+                report_data=report_json,
+                date_created=get_local_time()
+            )
+            db.session.add(new_report)
+            db.session.commit()
 
-        # Save the report to the database with both channel_id and channel_title
-        new_report = Report(
-            user_id=current_user.id, 
-            channel_id=channel_id,
-            channel_title=channel_title,
-            report_data=report_json
-        )
-        db.session.add(new_report)
-        db.session.commit()
+            yield json.dumps({'progress': 'Report generated and saved.'}) + '\n'
+            yield json.dumps({
+                'report': json.loads(report_json),
+                'report_id': new_report.id,
+                'channel_title': channel_title
+            }) + '\n'
 
-        return jsonify({'report': json.loads(report_json), 'report_id': new_report.id})
+        except Exception as e:
+            yield json.dumps({'error': f'An unexpected error occurred: {str(e)}'}) + '\n'
 
-    except Exception as e:
-        return jsonify({'error': f'An unexpected error occurred: {str(e)}'}), 500
+    return Response(stream_with_context(generate()), content_type='application/json')
+
+
+# Update the dashboard route to include the date_created in the reports
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    reports = Report.query.filter_by(user_id=current_user.id).order_by(Report.date_created.desc()).all()
+    return render_template('dashboard.html', reports=reports)
+
+# Update the get_report route to include the date_created
+@app.route('/report/<int:report_id>')
+@login_required
+def get_report(report_id):
+    report = Report.query.get(report_id)
+    if report and report.user_id == current_user.id:
+        return jsonify({
+            'report': json.loads(report.report_data),
+            'date_created': report.date_created.isoformat()
+        })
+    else:
+        return jsonify({'error': 'Report not found'}), 404
 
 # Run the app
 if __name__ == '__main__':

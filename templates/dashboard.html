@@ -1,95 +1,211 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
-    <style>
-        pre {
-            background-color: #f4f4f4;
-            padding: 10px;
-            border-radius: 5px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-    </style>
-</head>
-<body>
-    <h2>Welcome, {{ current_user.username }}!</h2>
-    <a href="{{ url_for('logout') }}">Logout</a>
-    
-    <h3>Analyze a New Channel</h3>
-    <form id="analyze-form">
-        <input type="text" id="channel-url" placeholder="Enter YouTube channel URL" required>
-        <button type="submit">Analyze</button>
-    </form>
-    
-    <h3>Your Reports</h3>
-    {% if reports %}
-        <ul>
-        {% for report in reports %}
-            <li>
-                Channel: {{ report.channel_title }}
-                <button onclick='viewReport({{ report.id }}, {{ report.report_data|tojson|safe }})'>View Report</button>
-            </li>
-        {% endfor %}
-        </ul>
-    {% else %}
-        <p>No reports yet. Analyze a channel to get started!</p>
-    {% endif %}
-    
-    <div id="report-container"></div>
+{% extends "layout.html" %}
 
-    <script>
-        document.getElementById('analyze-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            analyzeChannel();
-        });
+{% block content %}
+<div class="space-y-8">
+    <h2 class="text-3xl font-bold">Welcome, {{ current_user.username }}!</h2>
 
-        function analyzeChannel() {
-            const channelUrl = document.getElementById('channel-url').value;
-            fetch('/analyze', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({channel_url: channelUrl}),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert(data.error);
-                } else {
-                    displayReport(data.report);
-                }
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-                alert('An error occurred while analyzing the channel.');
-            });
-        }
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Analyze New Channel Panel -->
+        <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+            <h3 class="text-xl font-bold mb-4">Analyze a New Channel</h3>
+            <form id="analyze-form" class="space-y-4">
+                <div>
+                    <label for="channel-url" class="block text-gray-700 text-sm font-bold mb-2">YouTube Channel URL</label>
+                    <input type="text" id="channel-url" name="channel-url" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <button type="submit" class="bg-rose-500 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Analyze
+                </button>
+            </form>
+        </div>
 
-        function viewReport(reportId, reportData) {
-            displayReport(reportData);
-        }
+        <!-- Progress Display Panel -->
+        <div class="bg-black text-green-400 font-mono text-sm shadow-md rounded px-4 pt-4 pb-4 mb-4 overflow-y-auto" style="height: 300px;">
+            <h3 class="text-xl font-bold mb-4 text-white">Progress Log</h3>
+            <div id="progress-log">
+                > Waiting for channel analysis to start...
+            </div>
+        </div>
+    </div>
 
-        function displayReport(report) {
-            const reportContainer = document.getElementById('report-container');
-            let formattedReport;
-            try {
-                // If report is already a JavaScript object, stringify it
-                if (typeof report === 'object') {
-                    formattedReport = JSON.stringify(report, null, 2);
-                } else {
-                    // If report is a JSON string, parse and then stringify it
-                    formattedReport = JSON.stringify(JSON.parse(report), null, 2);
-                }
-            } catch (e) {
-                console.error('Error formatting report:', e);
-                formattedReport = 'Error: Unable to format report';
+    <div id="reports-list">
+        <h3 class="text-xl font-bold mb-4">Your Reports</h3>
+        <div id="reports-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for report in reports %}
+                <div class="bg-white shadow-md rounded px-8 pt-6 pb-8">
+                    <h4 class="text-lg font-bold mb-2">{{ report.channel_title }}</h4>
+                    <p class="text-gray-600 mb-4">Analyzed on: {{ report.date_created.strftime('%Y-%m-%d %I:%M %p') }}</p>
+                    <button onclick="viewReport('{{ report.id }}')" class="bg-rose-500 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        View Report
+                    </button>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div id="report-container" class="mt-8 bg-white shadow-md rounded p-6 hidden"></div>
+
+<script>
+    const progressLog = document.getElementById('progress-log');
+    const reportsGrid = document.getElementById('reports-grid');
+
+    function addProgressLog(message) {
+        const logEntry = document.createElement('div');
+        logEntry.textContent = `> ${message}`;
+        progressLog.appendChild(logEntry);
+        progressLog.scrollTop = progressLog.scrollHeight;
+    }
+
+    function addReportToList(data) {
+        console.log('Adding report to list:', data);
+        const reportDiv = document.createElement('div');
+        reportDiv.className = 'bg-white shadow-md rounded px-8 pt-6 pb-8';
+        reportDiv.innerHTML = `
+            <h4 class="text-lg font-bold mb-2">${data.channel_title}</h4>
+            <p class="text-gray-600 mb-4">Analyzed on: ${new Date().toLocaleString()}</p>
+            <button onclick="viewReport('${data.report_id}')" class="bg-rose-500 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                View Report
+            </button>
+        `;
+        reportsGrid.insertBefore(reportDiv, reportsGrid.firstChild);
+        console.log('Report added to list');
+    }
+
+    document.getElementById('analyze-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const channelUrl = document.getElementById('channel-url').value;
+        
+        // Clear previous logs
+        progressLog.innerHTML = '';
+        addProgressLog('Starting channel analysis...');
+
+        fetch('/analyze', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({channel_url: channelUrl}),
+        })
+        .then(response => {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            function readStream() {
+                reader.read().then(({ done, value }) => {
+                    if (done) {
+                        addProgressLog('Analysis complete!');
+                        return;
+                    }
+                    const chunk = decoder.decode(value);
+                    const messages = chunk.split('\n').filter(msg => msg.trim() !== '');
+                    messages.forEach(msg => {
+                        try {
+                            const data = JSON.parse(msg);
+                            console.log('Received data:', data);
+                            if (data.progress) {
+                                addProgressLog(data.progress);
+                            } else if (data.error) {
+                                addProgressLog(`Error: ${data.error}`);
+                            } else if (data.report) {
+                                console.log('Received report data:', data);
+                                displayReport(data.report);
+                                addReportToList(data);
+                                addProgressLog('Report added to the list and displayed.');
+                            }
+                        } catch (e) {
+                            console.error('Error parsing JSON:', e);
+                        }
+                    });
+                    readStream();
+                });
             }
-            reportContainer.innerHTML = '<h3>Channel Report</h3><pre>' + formattedReport + '</pre>';
+
+            readStream();
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+            addProgressLog(`Error: ${error.message}`);
+        });
+    });
+
+    function viewReport(reportId) {
+        fetch(`/report/${reportId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                displayReport(data.report, data.date_created);
+            }
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+
+    function displayReport(report, dateCreated) {
+        const reportContainer = document.getElementById('report-container');
+        reportContainer.innerHTML = ''; // Clear previous content
+        reportContainer.classList.remove('hidden');
+
+        // Create title and date
+        const titleContainer = document.createElement('div');
+        titleContainer.className = 'text-center mb-6';
+        
+        const title = document.createElement('h2');
+        title.textContent = report.consultation_report.title;
+        title.className = 'text-2xl font-bold';
+        titleContainer.appendChild(title);
+
+        if (dateCreated) {
+            const date = document.createElement('p');
+            date.textContent = `Generated on: ${new Date(dateCreated).toLocaleString()}`;
+            date.className = 'text-gray-600 mt-2';
+            titleContainer.appendChild(date);
         }
-    </script>
-</body>
-</html>
+
+        reportContainer.appendChild(titleContainer);
+
+        // Create grid container
+        const gridContainer = document.createElement('div');
+        gridContainer.className = 'grid grid-cols-1 md:grid-cols-2 gap-6';
+        reportContainer.appendChild(gridContainer);
+
+        report.consultation_report.sections.forEach(section => {
+            const sectionDiv = document.createElement('div');
+            sectionDiv.className = 'bg-rose-50 rounded-lg p-6 shadow-md';
+
+            const sectionTitle = document.createElement('h3');
+            sectionTitle.textContent = `${section.number}. ${section.subtitle}`;
+            sectionTitle.className = 'text-xl font-semibold mb-4 text-rose-700';
+            sectionDiv.appendChild(sectionTitle);
+
+            if (typeof section.content === 'string') {
+                const content = document.createElement('p');
+                content.textContent = section.content;
+                content.className = 'text-gray-700';
+                sectionDiv.appendChild(content);
+            } else if (Array.isArray(section.content)) {
+                section.content.forEach(subSection => {
+                    if (subSection.sections) {
+                        subSection.sections.forEach(subSubSection => {
+                            const subTitle = document.createElement('h4');
+                            subTitle.textContent = `${subSubSection.number}. ${subSubSection.subtitle}`;
+                            subTitle.className = 'text-lg font-medium mt-4 mb-2 text-rose-600';
+                            sectionDiv.appendChild(subTitle);
+
+                            const subContent = document.createElement('p');
+                            subContent.textContent = subSubSection.content;
+                            subContent.className = 'text-gray-700';
+                            sectionDiv.appendChild(subContent);
+                        });
+                    }
+                });
+            }
+
+            gridContainer.appendChild(sectionDiv);
+        });
+    }
+</script>
+{% endblock %}
