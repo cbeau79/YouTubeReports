@@ -110,7 +110,7 @@ def analyze():
                 return
 
             channel_url = data['channel_url']
-            yield json.dumps({'progress': 'Extracting channel ID...'}) + '\n'
+            yield json.dumps({'progress': 'Extracting channel ID ...'}) + '\n'
             channel_id = extract_channel_id(channel_url)
 
             if not channel_id:
@@ -118,7 +118,7 @@ def analyze():
                 return
             
             yield json.dumps({'progress': f'Channel ID: {channel_id}'}) + '\n'
-            yield json.dumps({'progress': 'Fetching channel data...'}) + '\n'
+            yield json.dumps({'progress': 'Fetching channel data ...'}) + '\n'
             channel_data = fetch_channel_data(channel_id)
 
             if not channel_data:
@@ -128,7 +128,7 @@ def analyze():
             channel_title = channel_data.get('title', 'Unknown Channel')
             yield json.dumps({'progress': f'Analyzing channel: {channel_title}'}) + '\n'
 
-            yield json.dumps({'progress': 'Generating report...'}) + '\n'
+            yield json.dumps({'progress': 'Generating report (takes a minute) ...'}) + '\n'
             report_json = generate_channel_report(channel_data)
 
             if not report_json:
