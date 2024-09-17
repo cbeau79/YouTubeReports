@@ -34,6 +34,7 @@ class Report(db.Model):
     channel_id = db.Column(db.String(100), nullable=False)
     channel_title = db.Column(db.String(200), nullable=False)
     report_data = db.Column(db.Text, nullable=False)
+    raw_channel_data = db.Column(db.Text, nullable=True)
     date_created = db.Column(db.DateTime, nullable=False)
 
 # User loader function for Flask-Login
@@ -45,7 +46,6 @@ def load_user(user_id):
 def get_local_time():
     local_tz = timezone('US/Pacific')  # Replace with your local timezone
     return datetime.now(local_tz)
-
 
 # Route for the home page
 @app.route('/')
@@ -98,7 +98,7 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
-# Update the analyze route to include the date_created
+# Analyze Route
 @app.route('/analyze', methods=['POST'])
 @login_required
 def analyze():
@@ -140,6 +140,7 @@ def analyze():
                 channel_id=channel_id,
                 channel_title=channel_title,
                 report_data=report_json,
+                raw_channel_data=json.dumps(channel_data),
                 date_created=get_local_time()
             )
             db.session.add(new_report)
@@ -149,7 +150,8 @@ def analyze():
             yield json.dumps({
                 'report': json.loads(report_json),
                 'report_id': new_report.id,
-                'channel_title': channel_title
+                'channel_title': channel_title,
+                'avatar_url': channel_data['avatar_url']
             }) + '\n'
 
         except Exception as e:
@@ -158,14 +160,14 @@ def analyze():
     return Response(stream_with_context(generate()), content_type='application/json')
 
 
-# Update the dashboard route to include the date_created in the reports
+# Dashboard route
 @app.route('/dashboard')
 @login_required
 def dashboard():
     reports = Report.query.filter_by(user_id=current_user.id).order_by(Report.date_created.desc()).all()
     return render_template('dashboard.html', reports=reports)
 
-# Update the get_report route to include the date_created
+# Get Report route
 @app.route('/report/<int:report_id>')
 @login_required
 def get_report(report_id):

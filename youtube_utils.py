@@ -272,6 +272,8 @@ def fetch_channel_data(channel_id):
                 'description': channel_info['snippet']['description'],
                 'subscriber_count': channel_info['statistics']['subscriberCount'],
                 'total_view_count': channel_info['statistics']['viewCount'],
+                'total_video_count': channel_info['statistics']['videoCount'],
+                'avatar_url': channel_info['snippet']['thumbnails']['default']['url'],
                 'videos': []
             }
             
