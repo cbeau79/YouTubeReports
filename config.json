@@ -1,0 +1,6 @@
+{
+  "max_videos_to_fetch": 100,
+  "max_videos_for_subtitles": 5,
+  "openai_model": "gpt-4o-mini",
+  "max_tokens": 4000
+}
