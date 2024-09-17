@@ -5,4 +5,3 @@ config.json
 .ip_address.swp
 notion_utls.py
 .env
-config.py

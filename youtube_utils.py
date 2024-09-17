@@ -22,15 +22,15 @@ def load_config():
         exit(1)
 
 # Load configuration
-config = load_config()
+app_config = load_config()
 
 # Use configuration values
-API_KEY = config['youtube_api_key']
-OPENAI_API_KEY = config['openai_api_key']
-MAX_VIDEOS = config['max_videos_to_fetch']
-MAX_VIDEOS_FOR_SUBTITLES = config['max_videos_for_subtitles']
-OPENAI_MODEL = config['openai_model']
-MAX_TOKENS = config['max_tokens']
+API_KEY = os.environ.get('YOUTUBE_API_KEY')
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+MAX_VIDEOS = app_config['max_videos_to_fetch']
+MAX_VIDEOS_FOR_SUBTITLES = app_config['max_videos_for_subtitles']
+OPENAI_MODEL = app_config['openai_model']
+MAX_TOKENS = app_config['max_tokens']
 
 # Initialize YouTube API client
 youtube = googleapiclient.discovery.build("youtube", "v3", developerKey=API_KEY)
