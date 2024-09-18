@@ -46,7 +46,8 @@
             {% for report in reports %}
                 <div class="bg-white shadow-md rounded px-8 pt-6 pb-8">
                     <div class="flex items-center mb-4">
-                        <img src="{{ report.raw_channel_data.avatar_url }}" alt="{{ report.channel_title }} avatar" class="w-12 h-12 rounded-full mr-4">
+                        {% set raw_data = report.raw_channel_data | from_json %}
+                        <img src="{{ raw_data.avatar_url }}" alt="{{ report.channel_title }} avatar" class="w-12 h-12 rounded-full mr-4">
                         <div>
                             <h4 class="text-lg font-bold">{{ report.channel_title }}</h4>
                             <p class="text-gray-600">Analyzed on: {{ report.date_created.strftime('%Y-%m-%d %I:%M %p') }}</p>

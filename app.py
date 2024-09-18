@@ -42,6 +42,10 @@ class Report(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+@app.template_filter('from_json')
+def from_json(value):
+    return json.loads(value)
+
 # Helper function to get current time in local timezone
 def get_local_time():
     local_tz = timezone('US/Pacific')  # Replace with your local timezone
@@ -151,14 +155,13 @@ def analyze():
                 'report': json.loads(report_json),
                 'report_id': new_report.id,
                 'channel_title': channel_title,
-                'avatar_url': channel_data['avatar_url']
+                'avatar_url': channel_data['avatar_url']  # Make sure this is included
             }) + '\n'
 
         except Exception as e:
             yield json.dumps({'error': f'An unexpected error occurred: {str(e)}'}) + '\n'
 
     return Response(stream_with_context(generate()), content_type='application/json')
-
 
 # Dashboard route
 @app.route('/dashboard')
