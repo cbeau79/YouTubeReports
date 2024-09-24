@@ -1,0 +1,40 @@
+{
+  "title": "Video title here",
+  "overview": "Video summary here",
+  "video_views": "Video views here",
+  "video_url": "Video URL here",
+  "key_points": [
+    {
+      "point_title": "Point 1 title here",
+      "point_description": "Point 1 description here"
+    },
+    {
+      "point_title": "Point 2 title here",
+      "point_description": "Point 2 description here"
+    },
+    {
+      "point_title": "Point 3 title here",
+      "point_description": "Point 3 description here"
+    },
+    {
+      "point_title": "Point n title here",
+      "point_description": "Point n description here"
+    }
+  ],
+  "engagement_analysis": "Engagement analysis here",
+  "target_audience": "Target audience description here",
+  "improvement_suggestions": [
+    {
+      "improvement_title": "Improvement suggestion title 1 here",
+      "improvement_description": "Improvement description 1 here"
+    },
+    {
+      "improvement_title": "Improvement suggestion title 2 here",
+      "improvement_description": "Improvement description 2 here"
+    },
+    {
+      "improvement_title": "Improvement suggestion title 3 here",
+      "improvement_description": "Improvement description 3 here"
+    }
+  ]
+}

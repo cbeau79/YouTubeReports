@@ -96,8 +96,6 @@ def get_video_data(video_id):
         id=video_id
     ).execute()
 
-    # print(json.dumps(video_response, indent=2))
-
     for video in video_response['items']:
         duration = video['contentDetails'].get('duration', 'PT0S')
         try:
@@ -127,10 +125,20 @@ def get_video_data(video_id):
             'subtitles': subtitles
         })
 
-        print(json.dumps(output, indent=2))
-    
     return output
 
+def extract_video_id(url):
+    parsed_url = urlparse(url)
+    if parsed_url.hostname == 'youtu.be':
+        return parsed_url.path[1:]
+    if parsed_url.hostname in ('www.youtube.com', 'youtube.com'):
+        if parsed_url.path == '/watch':
+            return parse_qs(parsed_url.query)['v'][0]
+        if parsed_url.path[:7] == '/embed/':
+            return parsed_url.path.split('/')[2]
+        if parsed_url.path[:3] == '/v/':
+            return parsed_url.path.split('/')[2]
+    return None  # Invalid YouTube URL
 
 def get_channel_videos(channel_id, max_results):
     videos = []
@@ -297,43 +305,4 @@ def fetch_channel_data(channel_id):
 
     except Exception as e:
         print(f"An error occurred while fetching channel data: {e}")
-        return None
-    
-
-# --------------------------------------------------------
-# - I DON'T BELIEVE THESE FUNCTIONS ARE BEING USED ANYMORE
-# --------------------------------------------------------
-
-def parse_json_string(input_string):
-    print("\n---\n")
-    print(input_string)
-    print("\n---\n")
-    
-    # Unescape the string
-    clean_string = input_string.encode().decode('unicode_escape')
-    print(clean_string)
-    print("\n---\n")
-    
-    # Strip the outer quotation marks
-    clean_string = clean_string.strip('"')
-    print(clean_string)
-    print("\n---\n")
-
-    # Strip the tripple backticks
-    clean_string = clean_string.strip('```')
-    print(clean_string)
-    print("\n---\n")
-
-    # Remove the json at the start, if it's there
-    if clean_string.startswith('json'):
-        clean_string = clean_string[4:]
-    print(clean_string)
-    print("\n---\n")
-
-    try:
-        # Parse the string as JSON
-        json_data = json.loads(clean_string)
-        return json_data
-    except json.JSONDecodeError as e:
-        print(f"youtube_utils.py: Error parsing JSON string: {e}")
         return None

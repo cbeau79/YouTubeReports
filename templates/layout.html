@@ -3,30 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}YouTube Reports{% endblock %}</title>
+    <title>YouTube Reports</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes dots {
+            0%, 33% { content: '.'; }
+            34%, 66% { content: '..'; }
+            67%, 100% { content: '...'; }
+        }
+        .animated-dots::after {
+            content: '.';
+            animation: dots 1.5s steps(1, end) infinite;
+        }
+        .grain {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            background-repeat: repeat;
+            background-size: 128px 128px;
+        }
+        body {
+            background-image: linear-gradient(to right, #e4e4e7, #d4d4d8);
+            font-family: Helvetica, serif;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: Helvetica, serif;
+            font-weight: 700;
+        }
+        .navbar-gradient {
+            background-image: linear-gradient(to right, #2e2e2e, #252525);
+        }
+        .footer-gradient {
+            background-image: linear-gradient(to right, #2e2e2e, #252525);
+        }
+    </style>
+    <script>
+        (function(d) {
+            var config = {
+            kitId: 'mce8wqo',
+            scriptTimeout: 3000,
+            async: true
+            },
+            h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
+        })(document);
+    </script>
+    <script src="{{ url_for('static', filename='js/report-display.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/summary-display.js') }}"></script>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col">
-    <header class="bg-rose-600 text-white p-4">
-        <nav class="container mx-auto flex justify-between items-center">
-            <a href="{{ url_for('index') }}" class="text-2xl font-bold">YouTube Reports</a>
-            <div>
+<body class="bg-zinc-500 min-h-screen flex flex-col">
+    <nav class="bg-zinc-800 text-white p-4 relative">
+        <div class="grain absolute inset-0 opacity-100 mix-blend-multiply"></div>
+        <div class="container mx-auto px-4 py-1 flex justify-between items-center relative z-10">
+            <a href="{{ url_for('index') }}" class="text-2xl font-bold">
+                <img src="{{ url_for('serve_image', filename='youtube_reports_horiz-300x52.png') }}" alt="YouTube Reports">
+            </a>
+            <div class="space-x-4">
                 {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('dashboard') }}" class="mr-4 hover:underline">Dashboard</a>
-                    <a href="{{ url_for('logout') }}" class="hover:underline">Logout</a>
+                    <a href="{{ url_for('analyze') }}" class="hover:text-zinc-200">Analyze</a>
+                    <a href="{{ url_for('summarize') }}" class="hover:text-zinc-200">Summarize</a>
+                    <a href="{{ url_for('reports') }}" class="hover:text-zinc-200">Reports</a>
+                    <a href="{{ url_for('logout') }}" class="hover:text-zinc-200">Logout</a>
                 {% else %}
-                    <a href="{{ url_for('login') }}" class="mr-4 hover:underline">Login</a>
-                    <a href="{{ url_for('register') }}" class="hover:underline">Register</a>
+                    <a href="{{ url_for('login') }}" class="hover:text-zinc-200">Login</a>
+                    <a href="{{ url_for('register') }}" class="hover:text-zinc-200">Register</a>
                 {% endif %}
             </div>
-        </nav>
-    </header>
+        </div>
+    </nav>
 
-    <main class="container mx-auto flex-grow p-4">
+    <main class="flex-grow container mx-auto mt-8 px-4">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4" role="alert">
+                    <ul>
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        {% endwith %}
+
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="bg-gray-200 text-center p-4 mt-8">
+    <footer class="bg-zinc-800 text-zinc-50 text-center p-4 mt-8">
         <p>&copy; 2024 YouTube Reports. All rights reserved.</p>
     </footer>
 </body>

@@ -1,7 +1,6 @@
 from youtube_utils import get_video_data
 from urllib.parse import urlparse, parse_qs
 from openai_utils import generate_video_summary
-import json
 
 print("""
 ----------------------------

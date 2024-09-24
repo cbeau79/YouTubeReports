@@ -11,6 +11,16 @@
         content: '.';
         animation: dots 1.5s steps(1, end) infinite;
     }
+    .recent-update {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: #48bb78;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+    }
 </style>
 
 <div class="space-y-8">
@@ -43,17 +53,20 @@
     <div id="reports-list">
         <h3 class="text-xl font-bold mb-4">Your Reports</h3>
         <div id="reports-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {% for report in reports %}
-                <div class="bg-white shadow-md rounded px-8 pt-6 pb-8">
+            {% for item in report_data %}
+                <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 relative">
+                    {% if item.report.date_created|days_ago < 7 %}
+                        <span class="recent-update">Recently Updated</span>
+                    {% endif %}
                     <div class="flex items-center mb-4">
-                        {% set raw_data = report.raw_channel_data | from_json %}
-                        <img src="{{ raw_data.avatar_url }}" alt="{{ report.channel_title }} avatar" class="w-12 h-12 rounded-full mr-4">
+                        {% set raw_data = item.report.raw_channel_data | from_json %}
+                        <img src="{{ raw_data.avatar_url }}" alt="{{ item.report.channel_title }} avatar" class="w-12 h-12 rounded-full mr-4">
                         <div>
-                            <h4 class="text-lg font-bold">{{ report.channel_title }}</h4>
-                            <p class="text-gray-600">Analyzed on: {{ report.date_created.strftime('%Y-%m-%d %I:%M %p') }}</p>
+                            <h4 class="text-lg font-bold">{{ item.report.channel_title }}</h4>
+                            <p class="text-gray-600">Last accessed: {{ item.date_accessed.strftime('%Y-%m-%d %I:%M %p') }}</p>
                         </div>
                     </div>
-                    <button onclick="viewReport('{{ report.id }}')" class="bg-rose-500 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    <button onclick="viewReport('{{ item.report.id }}')" class="bg-rose-500 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
                         View Report
                     </button>
                 </div>
@@ -96,13 +109,17 @@
     function addReportToList(data) {
         console.log('Adding report to list:', data);
         const reportDiv = document.createElement('div');
-        reportDiv.className = 'bg-white shadow-md rounded px-8 pt-6 pb-8';
+        reportDiv.className = 'bg-white shadow-md rounded px-8 pt-6 pb-8 relative';
+        
+        const isRecent = (new Date() - new Date(data.date_created)) / (1000 * 60 * 60 * 24) < 7;
+        
         reportDiv.innerHTML = `
+            ${isRecent ? '<span class="recent-update">Recently Updated</span>' : ''}
             <div class="flex items-center mb-4">
                 <img src="${data.avatar_url}" alt="${data.channel_title} avatar" class="w-12 h-12 rounded-full mr-4">
                 <div>
                     <h4 class="text-lg font-bold">${data.channel_title}</h4>
-                    <p class="text-gray-600">Analyzed on: ${new Date().toLocaleString()}</p>
+                    <p class="text-gray-600">Last accessed: ${new Date().toLocaleString()}</p>
                 </div>
             </div>
             <button onclick="viewReport('${data.report_id}')" class="bg-rose-500 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">

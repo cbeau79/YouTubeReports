@@ -3,10 +3,6 @@ import json
 from config import Config
 import os
 
-# Load report JSON template
-with open('json_template.json') as f:
-    json_template = json.load(f)
-
 # Load app parameters
 def load_config():
     try:
@@ -34,6 +30,9 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 
 # report_data is a JSON formatted file containing channel data
 def generate_channel_report(channel_data):
+    # Load JSON report template
+    with open('json_template_report.json') as f:
+        json_template_report = json.load(f)
     
     # Craft the prompt
     prompt = f"""
@@ -69,7 +68,7 @@ def generate_channel_report(channel_data):
 
     Use this JSON template to format the results:
 
-    {json_template}
+    {json_template_report}
     """
 
     # Interface with OpenAI
@@ -86,8 +85,8 @@ def generate_channel_report(channel_data):
 
         returned_string = response.choices[0].message.content 
         # json_data = json.loads(returned_string)
-        formated_string = returned_string.encode().decode('unicode_escape')
-        print(formated_string)
+        # formated_string = returned_string.encode().decode('unicode_escape')
+        # print(formated_string)
 
         return returned_string
     except Exception as e:
@@ -97,8 +96,12 @@ def generate_channel_report(channel_data):
 # report_data is a JSON formatted file containing channel data
 def generate_video_summary(video_data):
     
+    # Load JSON summary template
+    with open('json_template_summary.json') as f:
+        json_template_summary = json.load(f)
+
     # Craft the prompt
-    prompt = f"""
+    my_prompt = f"""
     You are a YouTube content consultant. Analyze the following data about a YouTube video. The data is provided in JSON format:
 
     {video_data}
@@ -108,29 +111,52 @@ def generate_video_summary(video_data):
 
     Provide your analysis in a clear, structured format.
     
-    Do not rush to come up with an answer, take your time.
+    Do not rush to come up with an answer, take your time. Return your answer in JSON.
+    """
+
+    #Claude prompt
+    prompt = f"""
+    You are a YouTube content analyst. Analyze the following data about a YouTube video and provide a comprehensive summary. The data is provided in JSON format:
+
+    {json.dumps(video_data, indent=2)}
+
+    Please provide a summary of this video that includes the following:
+    1. A brief overview of the video's content (2-3 sentences)
+    2. Key points or main topics discussed in the video (bullet points - but go into as much detail as necessary to fully articulate the point. avoid simply summarising the point. instead, summarise and explain it. Use as many bullet points as you need to.)
+    3. Your analysis of the video's engagement (views, likes, comments) in the context of the channel's typical performance
+    4. Potential audience or target demographic for this content
+    5. Suggestions for improvement or expansion of the topic (2-3 ideas)
+
+    Provide your analysis in a clear, structured format. Take your time to answer, don't rush.
+
+    Return in JSON. 
+
+    Use this JSON template to format the results:
+    {json_template_summary}
     """
 
     # Interface with OpenAI
     try:
         response = client.chat.completions.create(
             model=OPENAI_MODEL,
-            # response_format={ "type": "json_object" },
+            response_format={ "type": "json_object" },
             messages=[
-                {"role": "system", "content": "You are a helpful YouTube researcher who is summarising videos for note taking"},
+                {"role": "system", "content": "You are a helpful YouTube content analyst who provides video summaries in JSON format."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=4000
         )
 
-        returned_string = response.choices[0].message.content 
-        # json_data = json.loads(returned_string)
-        # formated_string = returned_string.encode().decode('unicode_escape')
-        # print(formated_string)
+        summary = response.choices[0].message.content
+        # Ensure the summary is valid JSON
+        # json.loads(summary)  # This will raise an exception if the summary is not valid JSON
+        json_data = json.loads(summary)
+        # formated_string = summary.encode().decode('unicode_escape')
+        
+        print(json_data)
+        
+        return summary
 
-        print("NO")
-
-        return returned_string
     except Exception as e:
-        print(f"An error occurred while generating the report: {e}")
-        return ""
+        print(f"An error occurred while generating the video summary: {e}")
+        return json.dumps({"error": f"An unexpected error occurred: {str(e)}"})

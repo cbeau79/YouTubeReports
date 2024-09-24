@@ -1,0 +1,74 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4">
+    <div id="reports-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        {% for item in combined_data %}
+            <div class="bg-zinc-50 shadow-md rounded px-6 py-4 relative">
+                {% if item.type == 'channel_report' %}
+                    <span class="absolute top-2 right-2 bg-blue-500 text-zinc-50 text-xs px-2 py-1 rounded-full">Channel Report</span>
+                {% else %}
+                    <span class="absolute top-2 right-2 bg-green-500 text-zinc-50 text-xs px-2 py-1 rounded-full">Video Summary</span>
+                {% endif %}
+                <div class="flex items-center mb-4">
+                    {% if item.type == 'channel_report' %}
+                        {% set raw_data = item.item.raw_channel_data | from_json %}
+                        <img src="{{ raw_data.avatar_url }}" alt="{{ item.item.channel_title }} avatar" class="w-12 h-12 rounded-full mr-4">
+                        <div>
+                            <h4 class="text-lg text-zinc-700 font-bold">{{ item.item.channel_title }}</h4>
+                            <p class="text-zinc-500 text-sm">Date generated: {{ item.date_created.strftime('%Y-%m-%d %I:%M %p') }}</p>
+                        </div>
+                    {% else %}
+                        {% set raw_data = item.item.raw_video_data | from_json %}
+                        <img src="{{ raw_data.thumbnail_url }}" alt="{{ item.item.video_title }} thumbnail" class="w-12 h-12 rounded mr-4">
+                        <div>
+                            <h4 class="text-lg text-zinc-700 font-bold">{{ item.item.video_title }}</h4>
+                            <p class="text-zinc-500 text-sm">Date generated: {{ item.date_created.strftime('%Y-%m-%d %I:%M %p') }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <button onclick="viewReport('{{ item.type }}', '{{ item.item.id }}')" class="bg-red-500 hover:bg-red-700 text-zinc-50 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full">
+                    View {{ 'Report' if item.type == 'channel_report' else 'Summary' }}
+                </button>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div id="report-container" class="mt-8 bg-zinc-50 shadow-md rounded p-6 hidden"></div>
+    
+    <div id="summary-container" class="mt-8 bg-zinc-50 shadow-md rounded p-6 hidden">
+        <h2 id="video-title" class="text-2xl font-bold mb-4"></h2>
+        <div id="video-embed" class="mb-4"></div>
+        <div id="video-metadata" class="mb-4"></div>
+        <div id="video-summary" class="space-y-4"></div>
+    </div>
+</div>
+
+<script>
+    function viewReport(type, id) {
+        let url = type === 'channel_report' ? `/report/${id}` : `/summary/${id}`;
+        fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            } else {
+                if (type === 'channel_report') {
+                    displayReport(data.report);
+                } else {
+                    displaySummary(data);
+                }
+            }
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+            alert(`Failed to load ${type === 'channel_report' ? 'report' : 'summary'}: ${error.message}`);
+        });
+    }
+</script>
+{% endblock %}
