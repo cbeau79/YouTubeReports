@@ -1,6 +1,21 @@
 {
   "consultation_report": {
     "title": "",
+    "categorisation": [
+        {
+            "content_categoies": [
+                "",
+                "",
+                ""
+            ],
+            "content_category_justification": "",
+            "video_formats": [
+                "",
+                "",
+                ""
+            ]
+        }
+    ],
     "sections": [
       {
         "number": 1,

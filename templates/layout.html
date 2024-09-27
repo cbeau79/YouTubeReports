@@ -34,6 +34,33 @@
         .footer-gradient {
             background-image: linear-gradient(to right, #2e2e2e, #252525);
         }
+        .modal-overlay {
+            z-index: 50;
+        }
+        .modal-container {
+            z-index: 51;
+        }
+        nav {
+            z-index: 40;
+        }
+        @media (min-width: 1024px) {
+            .report-text {
+                font-size: 1.125rem; /* Equivalent to text-lg */
+            }
+        }
+        .report-column {
+            display: grid;
+            grid-auto-rows: 1fr;
+            gap: 1.5rem;
+        }
+        .report-panel {
+            display: flex;
+            flex-direction: column;
+        }
+        .report-panel-content {
+            flex-grow: 1;
+            overflow-y: auto;
+        }
     </style>
     <script>
         (function(d) {
@@ -45,21 +72,20 @@
             h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
         })(document);
     </script>
-    <script src="{{ url_for('static', filename='js/report-display.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/summary-display.js') }}"></script>
 </head>
 <body class="bg-zinc-500 min-h-screen flex flex-col">
     <nav class="bg-zinc-800 text-white p-4 relative">
         <div class="grain absolute inset-0 opacity-100 mix-blend-multiply"></div>
         <div class="container mx-auto px-4 py-1 flex justify-between items-center relative z-10">
             <a href="{{ url_for('index') }}" class="text-2xl font-bold">
-                <img src="{{ url_for('serve_image', filename='youtube_reports_horiz-300x52.png') }}" alt="YouTube Reports">
+                <img src="{{ url_for('serve_image', filename='youtube_reports_horiz-250x43.png') }}" alt="YouTube Reports">
             </a>
             <div class="space-x-4">
                 {% if current_user.is_authenticated %}
                     <a href="{{ url_for('analyze') }}" class="hover:text-zinc-200">Analyze</a>
                     <a href="{{ url_for('summarize') }}" class="hover:text-zinc-200">Summarize</a>
                     <a href="{{ url_for('reports') }}" class="hover:text-zinc-200">Reports</a>
+                    <a href="{{ url_for('account') }}" class="hover:text-zinc-200">Account</a>
                     <a href="{{ url_for('logout') }}" class="hover:text-zinc-200">Logout</a>
                 {% else %}
                     <a href="{{ url_for('login') }}" class="hover:text-zinc-200">Login</a>
@@ -70,17 +96,7 @@
     </nav>
 
     <main class="flex-grow container mx-auto mt-8 px-4">
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4" role="alert">
-                    <ul>
-                    {% for message in messages %}
-                        <li>{{ message }}</li>
-                    {% endfor %}
-                    </ul>
-                </div>
-            {% endif %}
-        {% endwith %}
+
 
         {% block content %}{% endblock %}
     </main>

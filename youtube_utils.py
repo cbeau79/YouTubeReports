@@ -268,7 +268,7 @@ def save_json_to_file(data, channel_id):
 def fetch_channel_data(channel_id):
     try:
         channel_response = youtube.channels().list(
-            part="snippet,statistics",
+            part="snippet,statistics,brandingSettings",
             id=channel_id
         ).execute()
 
@@ -282,6 +282,8 @@ def fetch_channel_data(channel_id):
                 'total_view_count': channel_info['statistics']['viewCount'],
                 'total_video_count': channel_info['statistics']['videoCount'],
                 'avatar_url': channel_info['snippet']['thumbnails']['default']['url'],
+                'banner_url': channel_info['brandingSettings']['image'].get('bannerExternalUrl', ''),
+                'trailer_video_id': channel_info['brandingSettings']['channel'].get('unsubscribedTrailer', ''),
                 'videos': []
             }
             

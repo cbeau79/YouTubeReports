@@ -2,8 +2,6 @@
 
 {% block content %}
 <div class="container mx-auto px-4">
-    <!-- h1 class="text-2xl font-bold mb-8">Analyze a YouTube Channel</h1 -->
-
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <!-- Analyze New Channel Panel -->
         <div class="bg-zinc-50 shadow-md rounded px-8 pt-6 pb-8 mb-4">
@@ -28,14 +26,10 @@
             </div>
         </div>
     </div>
-
-    <!-- Report Container -->
-    <div id="report-container" class="mt-8 bg-zinc-50 shadow-md rounded p-6 hidden"></div>
 </div>
 
 <script>
     const progressLog = document.getElementById('progress-log');
-    const reportContainer = document.getElementById('report-container');
     let currentAnimatedEntry = null;
 
     function addProgressLog(message) {
@@ -65,9 +59,7 @@
         e.preventDefault();
         const channelUrl = document.getElementById('channel-url').value;
         
-        // Clear previous logs and hide the report container
         progressLog.innerHTML = '';
-        reportContainer.classList.add('hidden');
         addProgressLog('Starting channel analysis...');
 
         fetch('/analyze_channel', {
@@ -84,7 +76,6 @@
             function readStream() {
                 reader.read().then(({ done, value }) => {
                     if (done) {
-                        addProgressLog('Analysis complete!');
                         return;
                     }
                     const chunk = decoder.decode(value);
@@ -98,9 +89,10 @@
                             } else if (data.error) {
                                 addProgressLog(`Error: ${data.error}`);
                             } else if (data.report) {
-                                console.log('Received report data:', data);
-                                displayReport(data.report);
-                                addProgressLog('Report generated and displayed.');
+                                addProgressLog('Report generated. Redirecting to reports page...');
+                                setTimeout(() => {
+                                    window.location.href = data.redirect_url;  // Use the new redirect_url
+                                }, 2000);
                             }
                         } catch (e) {
                             console.error('Error parsing JSON:', e);

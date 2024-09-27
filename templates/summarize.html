@@ -26,19 +26,10 @@
             </div>
         </div>
     </div>
-
-    <!-- Summary Container -->
-    <div id="summary-container" class="mt-8 bg-zinc-50 shadow-md rounded p-6 hidden">
-        <h2 id="video-title" class="text-2xl font-bold mb-4"></h2>
-        <div id="video-embed" class="mb-4"></div>
-        <div id="video-metadata" class="mb-4"></div>
-        <div id="video-summary" class="space-y-4"></div>
-    </div>
 </div>
 
 <script>
     const progressLog = document.getElementById('progress-log');
-    const summaryContainer = document.getElementById('summary-container');
     let currentAnimatedEntry = null;
 
     function addProgressLog(message) {
@@ -68,9 +59,7 @@
         e.preventDefault();
         const videoUrl = document.getElementById('video-url').value;
         
-        // Clear previous logs and hide the summary container
         progressLog.innerHTML = '';
-        summaryContainer.classList.add('hidden');
         addProgressLog('Starting video summarization...');
 
         fetch('/summarize_video', {
@@ -88,7 +77,7 @@
             function readStream() {
                 reader.read().then(({ done, value }) => {
                     if (done) {
-                        addProgressLog('Summarization complete!');
+                        addProgressLog('Summarization complete! Redirecting to reports page...');
                         return;
                     }
                     buffer += decoder.decode(value, {stream: true});
@@ -105,8 +94,10 @@
                                 } else if (data.type === 'error') {
                                     addProgressLog(`Error: ${data.message}`);
                                 } else if (data.type === 'summary') {
-                                    displaySummary(data.data);
-                                    addProgressLog('Summary generated and displayed.');
+                                    addProgressLog('Summary generated. Preparing to redirect...');
+                                    setTimeout(() => {
+                                        window.location.href = data.data.redirect_url;
+                                    }, 2000);
                                 }
                             } catch (e) {
                                 console.error('Error parsing JSON:', e);

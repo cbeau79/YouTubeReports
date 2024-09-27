@@ -46,7 +46,7 @@ function displayReport(report) {
 
         const subContent = document.createElement('p');
                         subContent.textContent = subSubSection.content;
-                        subContent.className = 'text-zinc-700';
+                        subContent.className = 'text-gray-700';
                         sectionDiv.appendChild(subContent);
                     });
                 }

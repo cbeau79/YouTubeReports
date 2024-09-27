@@ -24,12 +24,37 @@ login_manager.login_view = 'login'
 def get_local_time():
     return datetime.now(timezone('US/Pacific'))
 
-# Define models
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(100), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
+    first_name = db.Column(db.String(100))
+    last_name = db.Column(db.String(100))
     report_accesses = db.relationship('UserReportAccess', back_populates='user')
+    video_summaries = db.relationship('VideoSummary', back_populates='user')
+
+    def __init__(self, email, password):
+        self.email = email
+        self.set_password(password)
+
+    def set_password(self, password):
+        self.password = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password, password)
+
+    def get_full_name(self):
+        return f"{self.first_name} {self.last_name}".strip() or self.email
+
+    def delete_account(self):
+        UserReportAccess.query.filter_by(user_id=self.id).delete()
+        VideoSummary.query.filter_by(user_id=self.id).delete()
+        db.session.delete(self)
+        db.session.commit()
+
+    @property
+    def username(self):
+        return self.email
 
 class ChannelReport(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -39,6 +64,21 @@ class ChannelReport(db.Model):
     raw_channel_data = db.Column(db.Text, nullable=True)
     date_created = db.Column(db.DateTime(timezone=True), nullable=False, default=get_local_time)
     user_accesses = db.relationship('UserReportAccess', back_populates='report')
+    content_categories = db.Column(db.JSON, nullable=True)
+    video_formats = db.Column(db.JSON, nullable=True)
+    content_category_justification = db.Column(db.Text, nullable=True)
+
+    def set_categorization(self, categorization):
+        self.content_categories = categorization['content_categories']
+        self.video_formats = categorization['video_formats']
+        self.content_category_justification = categorization['content_category_justification']
+
+    def get_categorization(self):
+        return {
+            'content_categories': self.content_categories,
+            'video_formats': self.video_formats,
+            'content_category_justification': self.content_category_justification,
+        }
 
 class UserReportAccess(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -51,11 +91,14 @@ class UserReportAccess(db.Model):
 
 class VideoSummary(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    video_id = db.Column(db.String(100), unique=True, nullable=False)
+    video_id = db.Column(db.String(100), nullable=False)
     video_title = db.Column(db.String(200), nullable=False)
     summary_data = db.Column(db.Text, nullable=False)
     raw_video_data = db.Column(db.Text, nullable=True)
     date_created = db.Column(db.DateTime(timezone=True), nullable=False, default=get_local_time)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user = db.relationship('User', back_populates='video_summaries')
+    __table_args__ = (db.UniqueConstraint('video_id', 'user_id', name='uq_video_user'),)
 
 # User loader function for Flask-Login
 @login_manager.user_loader
@@ -95,12 +138,37 @@ def serve_image(filename):
 
 @app.route('/')
 def index():
-    return redirect(url_for('analyze'))
+    return redirect(url_for('reports'))
 
 @app.route('/analyze')
 @login_required
 def analyze():
     return render_template('analyze.html')
+
+@app.route('/account', methods=['GET', 'POST'])
+@login_required
+def account():
+    if request.method == 'POST':
+        action = request.form.get('action')
+        
+        if action == 'update':
+            current_user.first_name = request.form.get('first_name')
+            current_user.last_name = request.form.get('last_name')
+            
+            new_password = request.form.get('new_password')
+            if new_password:
+                current_user.set_password(new_password)
+            
+            db.session.commit()
+            flash('Your account has been updated.', 'success')
+        
+        elif action == 'delete':
+            current_user.delete_account()
+            logout_user()
+            flash('Your account has been deleted.', 'info')
+            return redirect(url_for('index'))
+    
+    return render_template('account.html', user=current_user)
 
 @app.route('/reports')
 @login_required
@@ -108,8 +176,8 @@ def reports():
     # Fetch user's channel report accesses
     user_report_accesses = UserReportAccess.query.filter_by(user_id=current_user.id).order_by(UserReportAccess.date_accessed.desc()).all()
     
-    # Fetch all video summaries (assuming all users can access all summaries)
-    video_summaries = VideoSummary.query.order_by(VideoSummary.date_created.desc()).all()
+    # Fetch video summaries for the current user
+    video_summaries = VideoSummary.query.filter_by(user_id=current_user.id).order_by(VideoSummary.date_created.desc()).all()
     
     unique_report_ids = set()
     combined_data = []
@@ -137,21 +205,36 @@ def reports():
     # Sort combined data by date created, most recent first
     combined_data.sort(key=lambda x: x['date_created'], reverse=True)
     
-    return render_template('reports.html', combined_data=combined_data)
+    # Check for new report or summary
+    new_report_id = request.args.get('new_report')
+    new_summary = request.args.get('new_summary', 'false')
+    
+    # If there's a new report, get its data
+    new_item = None
+    if new_report_id:
+        new_item = next((item for item in combined_data if item['type'] == 'channel_report' and str(item['item'].id) == new_report_id), None)
+    elif new_summary == 'true' and combined_data:
+        new_item = next((item for item in combined_data if item['type'] == 'video_summary'), None)
+    
+    return render_template('reports.html', 
+                           combined_data=combined_data, 
+                           new_item=new_item, 
+                           new_report_id=new_report_id, 
+                           new_summary=new_summary)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form.get('username')
+        email = request.form.get('email')
         password = request.form.get('password')
         
-        user = User.query.filter_by(username=username).first()
+        user = User.query.filter_by(email=email).first()
         if user:
-            flash('Username already exists')
+            flash('Email already exists')
             return redirect(url_for('register'))
         
-        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-        new_user = User(username=username, password=hashed_password)
+        new_user = User(email=email)
+        new_user.set_password(password)
         db.session.add(new_user)
         db.session.commit()
         
@@ -163,17 +246,45 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form.get('username')
+        app.logger.debug(f"Form data: {request.form}")
+        email = request.form.get('username')  # Changed from 'email' to 'username'
         password = request.form.get('password')
         
-        user = User.query.filter_by(username=username).first()
-        if user and check_password_hash(user.password, password):
-            login_user(user)
-            return redirect(url_for('analyze'))
+        app.logger.debug(f"Extracted email: {email}")
+        app.logger.debug(f"Extracted password: {'*' * len(password) if password else None}")
+        
+        user = User.query.filter_by(email=email).first()
+        app.logger.debug(f"Login attempt for email: {email}")
+        app.logger.debug(f"User found: {user is not None}")
+        
+        if user:
+            password_check = user.check_password(password)
+            app.logger.debug(f"Password check result: {password_check}")
+            
+            if password_check:
+                login_user(user)
+                app.logger.debug("Login successful")
+                return redirect(url_for('reports'))
+            else:
+                app.logger.debug("Invalid password")
         else:
-            flash('Invalid username or password')
+            app.logger.debug("User not found")
+        
+        flash('Invalid email or password')
     
     return render_template('login.html')
+
+@app.route('/debug_user/<email>')
+def debug_user(email):
+    user = User.query.filter_by(email=email).first()
+    if user:
+        return jsonify({
+            'email': user.email,
+            'password_hash': user.password,
+            'id': user.id
+        })
+    else:
+        return jsonify({'error': 'User not found'}), 404
 
 @app.route('/logout')
 @login_required
@@ -203,82 +314,66 @@ def analyze_channel():
 
             # Check if a fresh report exists
             existing_report = ChannelReport.query.filter_by(channel_id=channel_id).first()
+            
             if existing_report:
-                # Check if the user already has access to this report
-                user_access = UserReportAccess.query.filter_by(user_id=current_user.id, report_id=existing_report.id).first()
-                if not user_access:
-                    # If the user doesn't have access, create a new UserReportAccess entry
-                    user_access = UserReportAccess(user_id=current_user.id, report_id=existing_report.id)
-                    db.session.add(user_access)
-                else:
-                    # If the user already has access, update the access time
-                    user_access.date_accessed = get_local_time()
-                db.session.commit()
-
-                yield json.dumps({
-                    'progress': 'Report retrieved.',
-                    'report': json.loads(existing_report.report_data),
-                    'report_id': existing_report.id,
-                    'channel_title': existing_report.channel_title,
-                    'avatar_url': json.loads(existing_report.raw_channel_data)['avatar_url']
-                }) + '\n'
-                return
-
-            yield json.dumps({'progress': 'Fetching channel data ...'}) + '\n'
-            channel_data = fetch_channel_data(channel_id)
-
-            if not channel_data:
-                yield json.dumps({'error': 'Unable to fetch channel data'}) + '\n'
-                return
-
-            channel_title = channel_data.get('title', 'Unknown Channel')
-            save_json_to_file(channel_data, channel_title)
-            yield json.dumps({'progress': f'Analyzing channel: {channel_title}'}) + '\n'
-
-            yield json.dumps({'progress': 'Generating report (takes a minute) ...'}) + '\n'
-            report_json = generate_channel_report(channel_data)
-
-            if not report_json:
-                yield json.dumps({'error': 'Failed to generate channel report'}) + '\n'
-                return
-
-            # Save or update the report
-            if existing_report:
-                existing_report.report_data = report_json
-                existing_report.raw_channel_data = json.dumps(channel_data)
-                existing_report.date_created = get_local_time()
-                report = existing_report
+                yield json.dumps({'progress': 'Existing report found. Retrieving data...'}) + '\n'
+                report_data = json.loads(existing_report.report_data)
+                channel_data = json.loads(existing_report.raw_channel_data)
+                channel_title = channel_data.get('title', 'Unknown Channel')
             else:
-                report = ChannelReport(
+                yield json.dumps({'progress': 'Fetching channel data ...'}) + '\n'
+                channel_data = fetch_channel_data(channel_id)
+
+                if not channel_data:
+                    yield json.dumps({'error': 'Unable to fetch channel data'}) + '\n'
+                    return
+
+                channel_title = channel_data.get('title', 'Unknown Channel')
+                yield json.dumps({'progress': f'Analyzing channel: {channel_title}'}) + '\n'
+
+                yield json.dumps({'progress': 'Generating report (takes a minute) ...'}) + '\n'
+                report_json = generate_channel_report(channel_data)
+
+                if not report_json:
+                    yield json.dumps({'error': 'Failed to generate channel report'}) + '\n'
+                    return
+
+                report_data = json.loads(report_json)
+                
+                # Extract categorization data
+                categorization = report_data['consultation_report']['categorisation'][0]
+
+                # Create new report
+                existing_report = ChannelReport(
                     channel_id=channel_id,
                     channel_title=channel_title,
                     report_data=report_json,
                     raw_channel_data=json.dumps(channel_data)
                 )
-                db.session.add(report)
-            
-            db.session.commit()
+                existing_report.set_categorization(categorization)
+                db.session.add(existing_report)
+                db.session.commit()
 
-            # Check if the user already has access to this report
-            user_access = UserReportAccess.query.filter_by(user_id=current_user.id, report_id=report.id).first()
+            # Create or update UserReportAccess
+            user_access = UserReportAccess.query.filter_by(user_id=current_user.id, report_id=existing_report.id).first()
             if not user_access:
-                # If the user doesn't have access, create a new UserReportAccess entry
-                user_access = UserReportAccess(user_id=current_user.id, report_id=report.id)
+                user_access = UserReportAccess(user_id=current_user.id, report_id=existing_report.id)
                 db.session.add(user_access)
             else:
-                # If the user already has access, update the access time
                 user_access.date_accessed = get_local_time()
             db.session.commit()
 
-            yield json.dumps({'progress': 'Report generated and added to your reports.'}) + '\n'
+            yield json.dumps({'progress': 'Report retrieved and added to your reports.'}) + '\n'
             yield json.dumps({
-                'report': json.loads(report_json),
-                'report_id': report.id,
+                'report': report_data,
+                'report_id': existing_report.id,
                 'channel_title': channel_title,
-                'avatar_url': channel_data['avatar_url']
+                'avatar_url': channel_data['avatar_url'],
+                'redirect_url': url_for('reports', new_report=existing_report.id)
             }) + '\n'
 
         except Exception as e:
+            app.logger.error(f"An error occurred: {str(e)}")
             yield json.dumps({'error': f'An unexpected error occurred: {str(e)}'}) + '\n'
 
     return Response(stream_with_context(generate()), content_type='application/json')
@@ -296,7 +391,9 @@ def get_report(report_id):
         
         return jsonify({
             'report': json.loads(report.report_data),
-            'date_created': report.date_created.isoformat()
+            'raw_channel_data': json.loads(report.raw_channel_data) if report.raw_channel_data else None,
+            'date_created': report.date_created.isoformat(),
+            'categorization': report.get_categorization()  # Add this line
         })
     else:
         return jsonify({'error': 'Report not found or access denied'}), 404
@@ -341,19 +438,39 @@ def summarize_video():
             
             yield json.dumps({'type': 'progress', 'message': f'Video ID: {video_id}'}) + '\n'
 
-            # Check if a summary already exists
+            # Check if a summary already exists for this video
             existing_summary = VideoSummary.query.filter_by(video_id=video_id).first()
+            
             if existing_summary:
-                app.logger.info(f"Existing summary found for video {video_id}")
+                yield json.dumps({'type': 'progress', 'message': 'Existing summary found. Retrieving data...'}) + '\n'
                 try:
                     summary_data = json.loads(existing_summary.summary_data)
                     raw_data = json.loads(existing_summary.raw_video_data)
-                    yield json.dumps({'type': 'progress', 'message': 'Summary retrieved.'}) + '\n'
+                    
+                    # Check if the summary is already associated with the current user
+                    user_summary = VideoSummary.query.filter_by(video_id=video_id, user_id=current_user.id).first()
+                    
+                    if not user_summary:
+                        # If not, create a new association
+                        new_user_summary = VideoSummary(
+                            video_id=video_id,
+                            video_title=existing_summary.video_title,
+                            summary_data=existing_summary.summary_data,
+                            raw_video_data=existing_summary.raw_video_data,
+                            user_id=current_user.id
+                        )
+                        db.session.add(new_user_summary)
+                        db.session.commit()
+                        yield json.dumps({'type': 'progress', 'message': 'Summary associated with your account.'}) + '\n'
+                    else:
+                        yield json.dumps({'type': 'progress', 'message': 'Summary already in your account.'}) + '\n'
+
                     yield json.dumps({'type': 'summary', 'data': {
                         'summary': summary_data,
                         'video_id': existing_summary.video_id,
                         'video_title': existing_summary.video_title,
-                        'raw_data': raw_data
+                        'raw_data': raw_data,
+                        'redirect_url': url_for('reports', new_summary=existing_summary.id)
                     }}) + '\n'
                 except json.JSONDecodeError as e:
                     app.logger.error(f"Error decoding existing summary: {str(e)}")
@@ -386,12 +503,13 @@ def summarize_video():
 
             app.logger.info(f"Summary generated for video {video_id}")
 
-            # Save the summary
+            # Save the summary for the current user
             new_summary = VideoSummary(
                 video_id=video_id,
                 video_title=video_title,
                 summary_data=summary_json,
-                raw_video_data=json.dumps(video_data[0])
+                raw_video_data=json.dumps(video_data[0]),
+                user_id=current_user.id
             )
             db.session.add(new_summary)
             db.session.commit()
@@ -401,7 +519,8 @@ def summarize_video():
                 'summary': summary,
                 'video_id': video_id,
                 'video_title': video_title,
-                'raw_data': video_data[0]
+                'raw_data': video_data[0],
+                'redirect_url': url_for('reports', new_summary=new_summary.id)
             }}) + '\n'
 
         except Exception as e:
