@@ -19,7 +19,7 @@
         body {
             background-color: #2b2b2c;
             font-family: Helvetica;
-            font-weight: 300;
+            font-weight: 500;
             font-style: normal;
         }
         .ivyFont {
@@ -30,41 +30,25 @@
     </style>
 </head>
 <body class="h-screen flex items-center justify-center">
-    <!-- div class="w-max h-max bg-white shadow-lg rounded-lg flex items-center justify-center">
-        <img src="../i/dunes-full.png" alt="Description" class="max-w-full max-h-full object-cover">
-    </div-->
-    
     <div class="relative w-full h-full flex">
-        <img src="{{ url_for('serve_image', filename='dunes-full.png') }}" alt="Background" class="absolute inset-0 w-full h-full object-cover rounded-lg">
+        <img src="{{ url_for('serve_image', filename='dunes-narrow.png') }}" alt="Background" class="absolute inset-0 w-full h-full object-cover rounded-lg">
         <img src="{{ url_for('serve_image', filename='grade-up.png') }}" alt="Graded overlay" class="absolute bottom-0 h-1/2 w-full object-cover">    
         
-        <p class="ivyFont text-5xl text-zinc-100 absolute top-0" style="left: 15%; top: 20%;">Have you optimized your channel today?</p>
+        <!-- p class="ivyFont text-5xl text-zinc-100 absolute top-0" style="left: 15%; top: 20%;">Have you optimized your channel today?</p -->
 
-        <div class="absolute" style="left: 15%; top: 55%;">
-            <img src="{{ url_for('serve_image', filename='lumina-horiz-full.png') }}" alt="Overlay image 2" class="relative pb-4">
-            <p class="ivyFont text-4xl text-zinc-100 relative pb-4">Research and tools to fuel your growth.</p>
-            <p class="text-xl text-zinc-100 relative"><a href="{{ url_for('login') }}">Login</a> &nbsp;|&nbsp; <a href="{{ url_for('register') }}">Register</a></p>
+        <div class="flex" style="position: absolute; width: 100%; height: 100%;">
+            <div style="display: flex; position: relative; width: 55%; left: 0px; align-items: center; justify-content: center;">
+                <div style="">
+                    <img src="{{ url_for('serve_image', filename='lumina-horiz-full.png') }}" alt="Overlay image 2" class="relative pb-4" style="width: 80%;">
+                    <p class="ivyFont text-4xl text-zinc-100 relative pb-4">Research and tools to fuel your growth.</p>
+                    <p class="text-xl text-zinc-100 relative"><a href="{{ url_for('login') }}">Login</a> &nbsp;|&nbsp; <a href="{{ url_for('register') }}">Register</a></p>
+                </div>
+            </div>
+            <div class="" style="display: flex; position: relative; width: 45%; right: 0px; align-items: center;">
+                <img src="{{ url_for('serve_image', filename='demo-reports.png') }}" alt="Demo reports" style="width: 70%;">
+            </div>
         </div>
-
-        <!-- div style="left: 15%; top: 40%; background-color: rgb(244 244 245 / 0.85)" class="bg-zinc-100 absolute rounded-lg p-4 w-1/2">
-            <div class="mb-4">
-                <label for="email" class="block text-zinc-700 text-sm font-bold mb-2">Email</label>
-                <input type="email" id="email" name="email" required class="shadow appearance-none border rounded w-full py-2 px-3 text-zinc-700 leading-tight focus:outline-none focus:shadow-outline">
-            </div>
-            <div class="mb-6">
-                <label for="password" class="block text-zinc-700 text-sm font-bold mb-2">Password</label>
-                <input type="password" id="password" name="password" required class="shadow appearance-none border rounded w-full py-2 px-3 text-zinc-700 mb-3 leading-tight focus:outline-none focus:shadow-outline">
-            </div>
-            <div class="flex items-center justify-between">
-                <button type="submit" class="bg-red-600 hover:bg-red-800 text-zinc-50 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                    Log In
-                </button>
-                <a href="{{ url_for('register') }}" class="text-red-600 hover:text-red-800">Don't have an account yet?</a>
-            </div>
-        </div-->
-
-        
-    </div>
+        </div>
     </div>
 </body>
 </html>

@@ -168,7 +168,7 @@ def generate_video_summary(video_data):
     Structure your notes in the following way:
 
     1. Overview: A brief overview of the video's content (2-3 sentences).
-    2. Key points and insights from the video (Provide at least 10 bullet points, but use as many as you need to. Write at least one paragraph of explanation for each point. Be detailed and help the reader to understand the insight clearly. Include actual quotes where relevant that are 2-3 sentences each. Use the active voice).
+    2. Key points and insights from the video (Provide at least 10 bullet points, but use as many as you need to. Write at least one paragraph of explanation for each point. Use the active voice. Be detailed and help the reader to understand the insight clearly. If quotes from the text support or help to explain the insight then include the quote, but ensure that the quote is relevant and at least 2 or 3 sentences long.).
     3. Engagement analysis: Your analysis of the video's engagement (views, likes, comments) in the context of the channel's typical performance.
     4. Discourse summary: Using the top 100 comments as your source, provide 1 sentence that summarises the discussion in the comments - what's the nature of the conversation?
     5. Discourse themes: 3 or 4 detailed bullet points on the conversation in the comments - what themes have developed in the discussion?
