@@ -22,6 +22,21 @@
     }
   ],
   "engagement_analysis": "Engagement analysis here",
+  "discourse_summary": "Discourse summary here",
+  "discourse_themes": [
+    {
+      "theme_title": "Theme 1 title here",
+      "theme_description": "Theme 1 description here"
+    },
+    {
+      "theme_title": "Theme 2 title here",
+      "theme_description": "Theme 2 description here"
+    },
+    {
+      "theme_title": "Theme 2 title here",
+      "theme_description": "Theme 2 description here"
+    }
+  ],
   "target_audience": "Target audience description here",
   "improvement_suggestions": [
     {

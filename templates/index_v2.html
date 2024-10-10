@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="text-center">
+    <h1 class="text-4xl font-bold mb-8">Welcome to YouTube Reports</h1>
+    
+    {% if current_user.is_authenticated %}
+        <p class="text-xl mb-4">Hello, {{ current_user.username }}!</p>
+        <a href="{{ url_for('dashboard') }}" class="bg-rose-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Go to Dashboard
+        </a>
+    {% else %}
+        <p class="text-xl mb-4">Analyze YouTube channels with ease.</p>
+        <div class="space-x-4">
+            <a href="{{ url_for('login') }}" class="bg-rose-500 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded">
+                Login
+            </a>
+            <a href="{{ url_for('register') }}" class="bg-rose-500 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded">
+                Register
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

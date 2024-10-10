@@ -88,7 +88,7 @@ def extract_channel_id(url):
     
     return None
 
-def get_video_data(video_id):
+def get_video_data(video_id, include_comments=False):
     output = []
 
     video_response = youtube.videos().list(
@@ -109,7 +109,7 @@ def get_video_data(video_id):
         else:
             print(f"No subtitles available for video: {video['snippet']['title']}")
 
-        output.append({
+        video_data = {
             'title': video['snippet']['title'],
             'description': video['snippet']['description'],
             'length': int(duration_seconds),
@@ -123,9 +123,47 @@ def get_video_data(video_id):
             'thumbnail_url': video['snippet']['thumbnails']['default']['url'],
             'channel_title': video['snippet']['channelTitle'],
             'subtitles': subtitles
-        })
+        }
+
+        if include_comments:
+            video_data['top_comments'] = get_video_comments(video_id)
+
+        output.append(video_data)
 
     return output
+
+def get_video_comments(video_id, max_results=100):
+    comments = []
+    next_page_token = None
+
+    while len(comments) < max_results:
+        try:
+            response = youtube.commentThreads().list(
+                part="snippet",
+                videoId=video_id,
+                maxResults=min(100, max_results - len(comments)),
+                order="relevance",
+                pageToken=next_page_token
+            ).execute()
+
+            for item in response['items']:
+                comment = item['snippet']['topLevelComment']['snippet']
+                comments.append({
+                    'author': comment['authorDisplayName'],
+                    'text': comment['textDisplay'],
+                    'likes': comment['likeCount'],
+                    'published_at': comment['publishedAt']
+                })
+
+            next_page_token = response.get('nextPageToken')
+            if not next_page_token:
+                break
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An HTTP error occurred while fetching comments: {e}")
+            break
+
+    return comments[:max_results]
 
 def extract_video_id(url):
     parsed_url = urlparse(url)

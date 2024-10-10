@@ -34,17 +34,16 @@
         <img src="../i/dunes-full.png" alt="Description" class="max-w-full max-h-full object-cover">
     </div-->
     
-    <div class="relative w-full h-full flex">
-        <img src="{{ url_for('serve_image', filename='dunes-full.png') }}" alt="Background" class="absolute inset-0 w-full h-full object-cover rounded-lg">
-        <img src="{{ url_for('serve_image', filename='grade-up.png') }}" alt="Graded overlay" class="absolute bottom-0 h-1/2 w-full object-cover">    
-        
-        <p class="ivyFont text-5xl text-zinc-100 absolute top-0" style="left: 15%; top: 20%;">Have you optimized your channel today?</p>
+    <div class="relative w-full h-full flex" style="background-image: url('../i/dunes-full.png')">
+        <!-- img src="../i/dunes-full.png" alt="Background" class="absolute inset-0 w-full h-full object-cover rounded-lg"-->
+        <img src="../i/grade-up.png" alt="Graded overlay" class="absolute bottom-0 h-1/2 w-full object-cover">
 
-        <div class="absolute" style="left: 15%; top: 55%;">
-            <img src="{{ url_for('serve_image', filename='lumina-horiz-full.png') }}" alt="Overlay image 2" class="relative pb-4">
-            <p class="ivyFont text-4xl text-zinc-100 relative pb-4">Research and tools to fuel your growth.</p>
-            <p class="text-xl text-zinc-100 relative"><a href="{{ url_for('login') }}">Login</a> &nbsp;|&nbsp; <a href="{{ url_for('register') }}">Register</a></p>
-        </div>
+
+        
+    
+        <!--img src="../i/lumina-horiz-225x40.png" alt="Overlay image 2" style="left: 15%; top: 70%;" class="absolute object-cover">
+        <p class="ivyFont text-2xl text-zinc-100 absolute" style="left: 15%; top: 75%;">Research and tools to help you grow.</p>
+        <p class="ivyFont text-5xl text-zinc-100 absolute top-0" style="left: 15%; top: 20%;">Have you optimized your channel today?</p-->
 
         <!-- div style="left: 15%; top: 40%; background-color: rgb(244 244 245 / 0.85)" class="bg-zinc-100 absolute rounded-lg p-4 w-1/2">
             <div class="mb-4">

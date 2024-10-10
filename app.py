@@ -138,7 +138,7 @@ def serve_image(filename):
 
 @app.route('/')
 def index():
-    return redirect(url_for('reports'))
+    return render_template('index.html')
 
 @app.route('/analyze')
 @login_required
@@ -233,8 +233,7 @@ def register():
             flash('Email already exists')
             return redirect(url_for('register'))
         
-        new_user = User(email=email)
-        new_user.set_password(password)
+        new_user = User(email=email, password=password)
         db.session.add(new_user)
         db.session.commit()
         
@@ -247,7 +246,7 @@ def register():
 def login():
     if request.method == 'POST':
         app.logger.debug(f"Form data: {request.form}")
-        email = request.form.get('username')  # Changed from 'email' to 'username'
+        email = request.form.get('email')  # Changed from 'username' to 'email'
         password = request.form.get('password')
         
         app.logger.debug(f"Extracted email: {email}")
@@ -257,21 +256,14 @@ def login():
         app.logger.debug(f"Login attempt for email: {email}")
         app.logger.debug(f"User found: {user is not None}")
         
-        if user:
-            password_check = user.check_password(password)
-            app.logger.debug(f"Password check result: {password_check}")
-            
-            if password_check:
-                login_user(user)
-                app.logger.debug("Login successful")
-                return redirect(url_for('reports'))
-            else:
-                app.logger.debug("Invalid password")
+        if user and user.check_password(password):
+            login_user(user)
+            app.logger.debug("Login successful")
+            return redirect(url_for('reports'))
         else:
-            app.logger.debug("User not found")
+            app.logger.debug("Invalid email or password")
+            flash('Invalid email or password')
         
-        flash('Invalid email or password')
-    
     return render_template('login.html')
 
 @app.route('/debug_user/<email>')

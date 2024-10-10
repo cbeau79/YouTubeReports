@@ -1,14 +1,15 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div class="container mx-auto px-4">
+<div class="container mx-auto px-4 py-8">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <!-- Analyze New Channel Panel -->
-        <div class="bg-zinc-50 shadow-md rounded px-8 pt-6 pb-8 mb-4">
+        <div class="bg-zinc-50 shadow-md rounded px-8 pt-6 pb-8 mb-4 min-h-80">
             <h2 class="text-xl text-zinc-700 font-bold mb-4">Analyze a YouTube channel</h2>
+            <p class="pb-4">Generate channel reports, including analysis of content strategy, competitive landscape, and content style.</p>
             <form id="analyze-form" class="space-y-4">
                 <div>
-                    <label for="channel-url" class="block text-zinc-700 text-sm mb-2">YouTube channel URL</label>
+                    <label for="channel-url" class="block text-zinc-700 text-sm mb-2">YouTube channel URL:</label>
                     <input type="text" id="channel-url" name="channel-url" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                 </div>
                 <button type="submit" class="bg-red-500 hover:bg-red-700 text-zinc-50 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
@@ -18,11 +19,11 @@
         </div>
 
         <!-- Progress Display Panel -->
-        <div class="relative bg-zinc-800 text-green-500 font-mono text-sm shadow-md rounded px-4 pt-4 pb-4 mb-4 h-64 overflow-y-auto">
+        <div class="relative bg-zinc-800 text-green-500 min-h-80 font-mono text-sm shadow-md rounded px-4 pt-4 pb-4 mb-4 h-64 overflow-y-auto">
             <div class="grain absolute inset-0 opacity-50 mix-blend-multiply"></div>
             <h2 class="text-xl font-bold mb-4 text-zinc-50">Progress Log</h2>
             <div id="progress-log">
-                > Enter a YouTube channel URL to begin ...
+                > Waiting for YouTube channel URL to begin ...
             </div>
         </div>
     </div>
@@ -30,29 +31,42 @@
 
 <script>
     const progressLog = document.getElementById('progress-log');
-    let currentAnimatedEntry = null;
+    let messageQueue = [];
+    let isTyping = false;
 
-    function addProgressLog(message) {
-        const logEntry = document.createElement('div');
-        
-        if (message.endsWith('...')) {
-            const baseMessage = message.slice(0, -3);
-            logEntry.innerHTML = `> ${baseMessage}<span class="animated-dots"></span>`;
-            
-            if (currentAnimatedEntry) {
-                currentAnimatedEntry.querySelector('.animated-dots').classList.remove('animated-dots');
-            }
-            currentAnimatedEntry = logEntry;
-        } else {
-            logEntry.textContent = `> ${message}`;
-            if (currentAnimatedEntry) {
-                currentAnimatedEntry.querySelector('.animated-dots').classList.remove('animated-dots');
-                currentAnimatedEntry = null;
-            }
+    function addToMessageQueue(message) {
+        messageQueue.push(message);
+        if (!isTyping) {
+            typeNextMessage();
+        }
+    }
+
+    function typeNextMessage() {
+        if (messageQueue.length === 0) {
+            isTyping = false;
+            return;
         }
 
+        isTyping = true;
+        const message = messageQueue.shift();
+        const logEntry = document.createElement('div');
+        logEntry.className = 'log-entry';
+        logEntry.innerHTML = `> <span class="vidiprinter"></span>`;
         progressLog.appendChild(logEntry);
-        progressLog.scrollTop = progressLog.scrollHeight;
+        
+        typeVidiprinter(logEntry.querySelector('.vidiprinter'), message, () => {
+            progressLog.scrollTop = progressLog.scrollHeight;
+            setTimeout(typeNextMessage, 50); // Small delay between messages
+        });
+    }
+
+    function typeVidiprinter(element, text, onComplete, index = 0) {
+        if (index < text.length) {
+            element.textContent += text[index];
+            setTimeout(() => typeVidiprinter(element, text, onComplete, index + 1), 10); // Faster typing (20ms)
+        } else {
+            onComplete();
+        }
     }
 
     document.getElementById('analyze-form').addEventListener('submit', function(e) {
@@ -60,7 +74,7 @@
         const channelUrl = document.getElementById('channel-url').value;
         
         progressLog.innerHTML = '';
-        addProgressLog('Starting channel analysis...');
+        addToMessageQueue('Starting channel analysis...');
 
         fetch('/analyze_channel', {
             method: 'POST',
@@ -85,13 +99,13 @@
                             const data = JSON.parse(msg);
                             console.log('Received data:', data);
                             if (data.progress) {
-                                addProgressLog(data.progress);
+                                addToMessageQueue(data.progress);
                             } else if (data.error) {
-                                addProgressLog(`Error: ${data.error}`);
+                                addToMessageQueue(`Error: ${data.error}`);
                             } else if (data.report) {
-                                addProgressLog('Report generated. Redirecting to reports page...');
+                                addToMessageQueue('Report generated. Redirecting to reports page...');
                                 setTimeout(() => {
-                                    window.location.href = data.redirect_url;  // Use the new redirect_url
+                                    window.location.href = data.redirect_url;
                                 }, 2000);
                             }
                         } catch (e) {
@@ -106,7 +120,7 @@
         })
         .catch((error) => {
             console.error('Error:', error);
-            addProgressLog(`Error: ${error.message}`);
+            addToMessageQueue(`Error: ${error.message}`);
         });
     });
 </script>
