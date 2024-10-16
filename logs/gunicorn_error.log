@@ -1,0 +1,1235 @@
+[2024-10-16 06:23:22 -0700] [37369] [DEBUG] Current configuration:
+  config: gunicorn.conf.py
+  wsgi_app: None
+  bind: ['0.0.0.0:8000']
+  backlog: 2048
+  workers: 17
+  worker_class: sync
+  threads: 1
+  worker_connections: 1000
+  max_requests: 1000
+  max_requests_jitter: 50
+  timeout: 120
+  graceful_timeout: 30
+  keepalive: 2
+  limit_request_line: 4094
+  limit_request_fields: 100
+  limit_request_field_size: 8190
+  reload: True
+  reload_engine: auto
+  reload_extra_files: []
+  spew: False
+  check_config: False
+  print_config: False
+  preload_app: True
+  sendfile: None
+  reuse_port: False
+  chdir: /Users/chrisbeaumont/Projects/YouTubeReports
+  daemon: False
+  raw_env: []
+  pidfile: None
+  worker_tmp_dir: None
+  user: 501
+  group: 20
+  umask: 0
+  initgroups: False
+  tmp_upload_dir: None
+  secure_scheme_headers: {'X-FORWARDED-PROTOCOL': 'ssl', 'X-FORWARDED-PROTO': 'https', 'X-FORWARDED-SSL': 'on'}
+  forwarded_allow_ips: ['127.0.0.1']
+  accesslog: /Users/chrisbeaumont/Projects/YouTubeReports/logs/gunicorn_access.log
+  disable_redirect_access_to_syslog: False
+  access_log_format: %(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"
+  errorlog: /Users/chrisbeaumont/Projects/YouTubeReports/logs/gunicorn_error.log
+  loglevel: debug
+  capture_output: True
+  logger_class: gunicorn.glogging.Logger
+  logconfig: None
+  logconfig_dict: {}
+  logconfig_json: None
+  syslog_addr: unix:///var/run/syslog
+  syslog: False
+  syslog_prefix: None
+  syslog_facility: user
+  enable_stdio_inheritance: True
+  statsd_host: None
+  dogstatsd_tags: 
+  statsd_prefix: 
+  proc_name: lumina
+  default_proc_name: app:app
+  pythonpath: None
+  paste: None
+  on_starting: <function on_starting at 0x103744680>
+  on_reload: <function OnReload.on_reload at 0x103726020>
+  when_ready: <function WhenReady.when_ready at 0x103726160>
+  pre_fork: <function Prefork.pre_fork at 0x103726340>
+  post_fork: <function Postfork.post_fork at 0x103726480>
+  post_worker_init: <function post_worker_init at 0x103744720>
+  worker_int: <function WorkerInt.worker_int at 0x103726700>
+  worker_abort: <function WorkerAbort.worker_abort at 0x103726840>
+  pre_exec: <function PreExec.pre_exec at 0x103726980>
+  pre_request: <function PreRequest.pre_request at 0x103726ac0>
+  post_request: <function PostRequest.post_request at 0x103726b60>
+  child_exit: <function ChildExit.child_exit at 0x103726ca0>
+  worker_exit: <function WorkerExit.worker_exit at 0x103726de0>
+  nworkers_changed: <function NumWorkersChanged.nworkers_changed at 0x103726f20>
+  on_exit: <function on_exit at 0x1037445e0>
+  ssl_context: <function NewSSLContext.ssl_context at 0x103727240>
+  proxy_protocol: False
+  proxy_allow_ips: ['127.0.0.1']
+  keyfile: None
+  certfile: None
+  ssl_version: 2
+  cert_reqs: 0
+  ca_certs: None
+  suppress_ragged_eofs: True
+  do_handshake_on_connect: False
+  ciphers: None
+  raw_paste_global_conf: []
+  strip_header_spaces: False
+Traceback (most recent call last):
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/bin/gunicorn", line 8, in <module>
+    sys.exit(run())
+             ^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/wsgiapp.py", line 67, in run
+    WSGIApplication("%(prog)s [OPTIONS] [APP_MODULE]").run()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/base.py", line 236, in run
+    super().run()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/base.py", line 72, in run
+    Arbiter(self).run()
+    ^^^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 58, in __init__
+    self.setup(app)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 118, in setup
+    self.app.wsgi()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/base.py", line 67, in wsgi
+    self.callable = self.load()
+                    ^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/wsgiapp.py", line 58, in load
+    return self.load_wsgiapp()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/wsgiapp.py", line 48, in load_wsgiapp
+    return util.import_app(self.app_uri)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/util.py", line 371, in import_app
+    mod = importlib.import_module(module)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 995, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/chrisbeaumont/Projects/YouTubeReports/app.py", line 29, in <module>
+    file_handler = RotatingFileHandler('logs/lumina.log', maxBytes=10240, backupCount=10)
+                   ^^^^^^^^^^^^^^^^^^^
+NameError: name 'RotatingFileHandler' is not defined
+[2024-10-16 06:25:47 -0700] [37567] [DEBUG] Current configuration:
+  config: gunicorn.conf.py
+  wsgi_app: None
+  bind: ['0.0.0.0:8000']
+  backlog: 2048
+  workers: 17
+  worker_class: sync
+  threads: 1
+  worker_connections: 1000
+  max_requests: 1000
+  max_requests_jitter: 50
+  timeout: 120
+  graceful_timeout: 30
+  keepalive: 2
+  limit_request_line: 4094
+  limit_request_fields: 100
+  limit_request_field_size: 8190
+  reload: True
+  reload_engine: auto
+  reload_extra_files: []
+  spew: False
+  check_config: False
+  print_config: False
+  preload_app: True
+  sendfile: None
+  reuse_port: False
+  chdir: /Users/chrisbeaumont/Projects/YouTubeReports
+  daemon: False
+  raw_env: []
+  pidfile: None
+  worker_tmp_dir: None
+  user: 501
+  group: 20
+  umask: 0
+  initgroups: False
+  tmp_upload_dir: None
+  secure_scheme_headers: {'X-FORWARDED-PROTOCOL': 'ssl', 'X-FORWARDED-PROTO': 'https', 'X-FORWARDED-SSL': 'on'}
+  forwarded_allow_ips: ['127.0.0.1']
+  accesslog: /Users/chrisbeaumont/Projects/YouTubeReports/logs/gunicorn_access.log
+  disable_redirect_access_to_syslog: False
+  access_log_format: %(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"
+  errorlog: /Users/chrisbeaumont/Projects/YouTubeReports/logs/gunicorn_error.log
+  loglevel: debug
+  capture_output: True
+  logger_class: gunicorn.glogging.Logger
+  logconfig: None
+  logconfig_dict: {}
+  logconfig_json: None
+  syslog_addr: unix:///var/run/syslog
+  syslog: False
+  syslog_prefix: None
+  syslog_facility: user
+  enable_stdio_inheritance: True
+  statsd_host: None
+  dogstatsd_tags: 
+  statsd_prefix: 
+  proc_name: lumina
+  default_proc_name: app:app
+  pythonpath: None
+  paste: None
+  on_starting: <function on_starting at 0x102fc8680>
+  on_reload: <function OnReload.on_reload at 0x102faa020>
+  when_ready: <function WhenReady.when_ready at 0x102faa160>
+  pre_fork: <function Prefork.pre_fork at 0x102faa340>
+  post_fork: <function Postfork.post_fork at 0x102faa480>
+  post_worker_init: <function post_worker_init at 0x102fc8720>
+  worker_int: <function WorkerInt.worker_int at 0x102faa700>
+  worker_abort: <function WorkerAbort.worker_abort at 0x102faa840>
+  pre_exec: <function PreExec.pre_exec at 0x102faa980>
+  pre_request: <function PreRequest.pre_request at 0x102faaac0>
+  post_request: <function PostRequest.post_request at 0x102faab60>
+  child_exit: <function ChildExit.child_exit at 0x102faaca0>
+  worker_exit: <function WorkerExit.worker_exit at 0x102faade0>
+  nworkers_changed: <function NumWorkersChanged.nworkers_changed at 0x102faaf20>
+  on_exit: <function on_exit at 0x102fc85e0>
+  ssl_context: <function NewSSLContext.ssl_context at 0x102fab240>
+  proxy_protocol: False
+  proxy_allow_ips: ['127.0.0.1']
+  keyfile: None
+  certfile: None
+  ssl_version: 2
+  cert_reqs: 0
+  ca_certs: None
+  suppress_ragged_eofs: True
+  do_handshake_on_connect: False
+  ciphers: None
+  raw_paste_global_conf: []
+  strip_header_spaces: False
+[2024-10-16 06:25:48,393] INFO in app: Lumina startup
+[2024-10-16 06:25:48 -0700] [37567] [INFO] Starting gunicorn 21.2.0
+[2024-10-16 06:25:48 -0700] [37567] [INFO] Starting Lumina server
+[2024-10-16 06:25:48 -0700] [37567] [DEBUG] Arbiter booted
+[2024-10-16 06:25:48 -0700] [37567] [INFO] Listening at: http://0.0.0.0:8000 (37567)
+[2024-10-16 06:25:48 -0700] [37567] [INFO] Using worker: sync
+[2024-10-16 06:25:48 -0700] [37568] [INFO] Booting worker with pid: 37568
+[2024-10-16 06:25:48 -0700] [37568] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 609, in spawn_worker
+    worker.init_process()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/workers/base.py", line 138, in init_process
+    self.cfg.post_worker_init(self)
+  File "/Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py", line 45, in post_worker_init
+    worker.log.info(f"Worker {worker.id} initialized")
+                              ^^^^^^^^^
+AttributeError: 'SyncWorker' object has no attribute 'id'
+[2024-10-16 06:25:48 -0700] [37568] [INFO] Worker exiting (pid: 37568)
+[2024-10-16 06:25:48 -0700] [37569] [INFO] Booting worker with pid: 37569
+[2024-10-16 06:25:48 -0700] [37569] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 609, in spawn_worker
+    worker.init_process()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/workers/base.py", line 138, in init_process
+    self.cfg.post_worker_init(self)
+  File "/Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py", line 45, in post_worker_init
+    worker.log.info(f"Worker {worker.id} initialized")
+                              ^^^^^^^^^
+AttributeError: 'SyncWorker' object has no attribute 'id'
+[2024-10-16 06:25:48 -0700] [37569] [INFO] Worker exiting (pid: 37569)
+[2024-10-16 06:25:48 -0700] [37567] [ERROR] Worker (pid:37568) exited with code 3
+[2024-10-16 06:25:48 -0700] [37567] [ERROR] Worker (pid:37569) was sent SIGTERM!
+[2024-10-16 06:25:48 -0700] [37567] [ERROR] Shutting down: Master
+[2024-10-16 06:25:48 -0700] [37567] [ERROR] Reason: Worker failed to boot.
+[2024-10-16 06:25:48 -0700] [37567] [INFO] Stopping Lumina server
+[2024-10-16 06:26:56 -0700] [37657] [DEBUG] Current configuration:
+  config: gunicorn.conf.py
+  wsgi_app: None
+  bind: ['0.0.0.0:8000']
+  backlog: 2048
+  workers: 17
+  worker_class: sync
+  threads: 1
+  worker_connections: 1000
+  max_requests: 1000
+  max_requests_jitter: 50
+  timeout: 120
+  graceful_timeout: 30
+  keepalive: 2
+  limit_request_line: 4094
+  limit_request_fields: 100
+  limit_request_field_size: 8190
+  reload: True
+  reload_engine: auto
+  reload_extra_files: []
+  spew: False
+  check_config: False
+  print_config: False
+  preload_app: True
+  sendfile: None
+  reuse_port: False
+  chdir: /Users/chrisbeaumont/Projects/YouTubeReports
+  daemon: False
+  raw_env: []
+  pidfile: None
+  worker_tmp_dir: None
+  user: 501
+  group: 20
+  umask: 0
+  initgroups: False
+  tmp_upload_dir: None
+  secure_scheme_headers: {'X-FORWARDED-PROTOCOL': 'ssl', 'X-FORWARDED-PROTO': 'https', 'X-FORWARDED-SSL': 'on'}
+  forwarded_allow_ips: ['127.0.0.1']
+  accesslog: /Users/chrisbeaumont/Projects/YouTubeReports/logs/gunicorn_access.log
+  disable_redirect_access_to_syslog: False
+  access_log_format: %(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"
+  errorlog: /Users/chrisbeaumont/Projects/YouTubeReports/logs/gunicorn_error.log
+  loglevel: debug
+  capture_output: True
+  logger_class: gunicorn.glogging.Logger
+  logconfig: None
+  logconfig_dict: {}
+  logconfig_json: None
+  syslog_addr: unix:///var/run/syslog
+  syslog: False
+  syslog_prefix: None
+  syslog_facility: user
+  enable_stdio_inheritance: True
+  statsd_host: None
+  dogstatsd_tags: 
+  statsd_prefix: 
+  proc_name: lumina
+  default_proc_name: app:app
+  pythonpath: None
+  paste: None
+  on_starting: <function on_starting at 0x101250680>
+  on_reload: <function OnReload.on_reload at 0x101232020>
+  when_ready: <function WhenReady.when_ready at 0x101232160>
+  pre_fork: <function Prefork.pre_fork at 0x101232340>
+  post_fork: <function Postfork.post_fork at 0x101232480>
+  post_worker_init: <function post_worker_init at 0x101250720>
+  worker_int: <function WorkerInt.worker_int at 0x101232700>
+  worker_abort: <function WorkerAbort.worker_abort at 0x101232840>
+  pre_exec: <function PreExec.pre_exec at 0x101232980>
+  pre_request: <function PreRequest.pre_request at 0x101232ac0>
+  post_request: <function PostRequest.post_request at 0x101232b60>
+  child_exit: <function ChildExit.child_exit at 0x101232ca0>
+  worker_exit: <function WorkerExit.worker_exit at 0x101232de0>
+  nworkers_changed: <function NumWorkersChanged.nworkers_changed at 0x101232f20>
+  on_exit: <function on_exit at 0x1012505e0>
+  ssl_context: <function NewSSLContext.ssl_context at 0x101233240>
+  proxy_protocol: False
+  proxy_allow_ips: ['127.0.0.1']
+  keyfile: None
+  certfile: None
+  ssl_version: 2
+  cert_reqs: 0
+  ca_certs: None
+  suppress_ragged_eofs: True
+  do_handshake_on_connect: False
+  ciphers: None
+  raw_paste_global_conf: []
+  strip_header_spaces: False
+[2024-10-16 06:26:56,914] INFO in app: Lumina startup
+[2024-10-16 06:26:56 -0700] [37657] [INFO] Starting gunicorn 21.2.0
+[2024-10-16 06:26:56 -0700] [37657] [INFO] Starting Lumina server
+[2024-10-16 06:26:56 -0700] [37657] [DEBUG] Arbiter booted
+[2024-10-16 06:26:56 -0700] [37657] [INFO] Listening at: http://0.0.0.0:8000 (37657)
+[2024-10-16 06:26:56 -0700] [37657] [INFO] Using worker: sync
+[2024-10-16 06:26:56 -0700] [37658] [INFO] Booting worker with pid: 37658
+[2024-10-16 06:26:56 -0700] [37658] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 609, in spawn_worker
+    worker.init_process()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/workers/base.py", line 138, in init_process
+    self.cfg.post_worker_init(self)
+  File "/Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py", line 45, in post_worker_init
+    worker.log.info(f"Worker {worker.id} initialized")
+                              ^^^^^^^^^
+AttributeError: 'SyncWorker' object has no attribute 'id'
+[2024-10-16 06:26:56 -0700] [37658] [INFO] Worker exiting (pid: 37658)
+[2024-10-16 06:26:56 -0700] [37659] [INFO] Booting worker with pid: 37659
+[2024-10-16 06:26:56 -0700] [37659] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 609, in spawn_worker
+    worker.init_process()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/workers/base.py", line 138, in init_process
+    self.cfg.post_worker_init(self)
+  File "/Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py", line 45, in post_worker_init
+    worker.log.info(f"Worker {worker.id} initialized")
+                              ^^^^^^^^^
+AttributeError: 'SyncWorker' object has no attribute 'id'
+[2024-10-16 06:26:56 -0700] [37659] [INFO] Worker exiting (pid: 37659)
+[2024-10-16 06:26:57 -0700] [37660] [INFO] Booting worker with pid: 37660
+[2024-10-16 06:26:57 -0700] [37660] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 609, in spawn_worker
+    worker.init_process()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/workers/base.py", line 138, in init_process
+    self.cfg.post_worker_init(self)
+  File "/Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py", line 45, in post_worker_init
+    worker.log.info(f"Worker {worker.id} initialized")
+                              ^^^^^^^^^
+AttributeError: 'SyncWorker' object has no attribute 'id'
+[2024-10-16 06:26:57 -0700] [37660] [INFO] Worker exiting (pid: 37660)
+[2024-10-16 06:26:57 -0700] [37661] [INFO] Booting worker with pid: 37661
+[2024-10-16 06:26:57 -0700] [37661] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 609, in spawn_worker
+    worker.init_process()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/workers/base.py", line 138, in init_process
+    self.cfg.post_worker_init(self)
+  File "/Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py", line 45, in post_worker_init
+    worker.log.info(f"Worker {worker.id} initialized")
+                              ^^^^^^^^^
+AttributeError: 'SyncWorker' object has no attribute 'id'
+[2024-10-16 06:26:57 -0700] [37661] [INFO] Worker exiting (pid: 37661)
+[2024-10-16 06:26:57 -0700] [37657] [ERROR] Worker (pid:37658) exited with code 3
+[2024-10-16 06:26:57 -0700] [37657] [ERROR] Worker (pid:37661) was sent SIGTERM!
+[2024-10-16 06:26:57 -0700] [37657] [ERROR] Worker (pid:37660) was sent SIGTERM!
+[2024-10-16 06:26:57 -0700] [37657] [ERROR] Worker (pid:37659) was sent SIGTERM!
+[2024-10-16 06:26:57 -0700] [37657] [ERROR] Shutting down: Master
+[2024-10-16 06:26:57 -0700] [37657] [ERROR] Reason: Worker failed to boot.
+[2024-10-16 06:26:57 -0700] [37657] [INFO] Stopping Lumina server
+[2024-10-16 06:29:53 -0700] [37767] [DEBUG] Current configuration:
+  config: gunicorn.conf.py
+  wsgi_app: None
+  bind: ['0.0.0.0:8000']
+  backlog: 2048
+  workers: 17
+  worker_class: sync
+  threads: 1
+  worker_connections: 1000
+  max_requests: 1000
+  max_requests_jitter: 50
+  timeout: 120
+  graceful_timeout: 30
+  keepalive: 2
+  limit_request_line: 4094
+  limit_request_fields: 100
+  limit_request_field_size: 8190
+  reload: True
+  reload_engine: auto
+  reload_extra_files: []
+  spew: False
+  check_config: False
+  print_config: False
+  preload_app: True
+  sendfile: None
+  reuse_port: False
+  chdir: /Users/chrisbeaumont/Projects/YouTubeReports
+  daemon: False
+  raw_env: []
+  pidfile: None
+  worker_tmp_dir: None
+  user: 501
+  group: 20
+  umask: 0
+  initgroups: False
+  tmp_upload_dir: None
+  secure_scheme_headers: {'X-FORWARDED-PROTOCOL': 'ssl', 'X-FORWARDED-PROTO': 'https', 'X-FORWARDED-SSL': 'on'}
+  forwarded_allow_ips: ['127.0.0.1']
+  accesslog: /Users/chrisbeaumont/Projects/YouTubeReports/logs/gunicorn_access.log
+  disable_redirect_access_to_syslog: False
+  access_log_format: %(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"
+  errorlog: /Users/chrisbeaumont/Projects/YouTubeReports/logs/gunicorn_error.log
+  loglevel: debug
+  capture_output: True
+  logger_class: gunicorn.glogging.Logger
+  logconfig: None
+  logconfig_dict: {}
+  logconfig_json: None
+  syslog_addr: unix:///var/run/syslog
+  syslog: False
+  syslog_prefix: None
+  syslog_facility: user
+  enable_stdio_inheritance: True
+  statsd_host: None
+  dogstatsd_tags: 
+  statsd_prefix: 
+  proc_name: lumina
+  default_proc_name: app:app
+  pythonpath: None
+  paste: None
+  on_starting: <function on_starting at 0x100cc8680>
+  on_reload: <function OnReload.on_reload at 0x100caa020>
+  when_ready: <function WhenReady.when_ready at 0x100caa160>
+  pre_fork: <function Prefork.pre_fork at 0x100caa340>
+  post_fork: <function Postfork.post_fork at 0x100caa480>
+  post_worker_init: <function post_worker_init at 0x100cc8720>
+  worker_int: <function WorkerInt.worker_int at 0x100caa700>
+  worker_abort: <function WorkerAbort.worker_abort at 0x100caa840>
+  pre_exec: <function PreExec.pre_exec at 0x100caa980>
+  pre_request: <function PreRequest.pre_request at 0x100caaac0>
+  post_request: <function PostRequest.post_request at 0x100caab60>
+  child_exit: <function ChildExit.child_exit at 0x100caaca0>
+  worker_exit: <function WorkerExit.worker_exit at 0x100caade0>
+  nworkers_changed: <function NumWorkersChanged.nworkers_changed at 0x100caaf20>
+  on_exit: <function on_exit at 0x100cc85e0>
+  ssl_context: <function NewSSLContext.ssl_context at 0x100cab240>
+  proxy_protocol: False
+  proxy_allow_ips: ['127.0.0.1']
+  keyfile: None
+  certfile: None
+  ssl_version: 2
+  cert_reqs: 0
+  ca_certs: None
+  suppress_ragged_eofs: True
+  do_handshake_on_connect: False
+  ciphers: None
+  raw_paste_global_conf: []
+  strip_header_spaces: False
+[2024-10-16 06:29:53,562] INFO in app: Lumina startup
+[2024-10-16 06:29:53 -0700] [37767] [INFO] Starting gunicorn 21.2.0
+[2024-10-16 06:29:53 -0700] [37767] [INFO] Starting Lumina server
+[2024-10-16 06:29:53 -0700] [37767] [DEBUG] Arbiter booted
+[2024-10-16 06:29:53 -0700] [37767] [INFO] Listening at: http://0.0.0.0:8000 (37767)
+[2024-10-16 06:29:53 -0700] [37767] [INFO] Using worker: sync
+[2024-10-16 06:29:53 -0700] [37768] [INFO] Booting worker with pid: 37768
+[2024-10-16 06:29:53 -0700] [37768] [INFO] Worker initialized
+[2024-10-16 06:29:53 -0700] [37769] [INFO] Booting worker with pid: 37769
+[2024-10-16 06:29:53 -0700] [37769] [INFO] Worker initialized
+[2024-10-16 06:29:53 -0700] [37770] [INFO] Booting worker with pid: 37770
+[2024-10-16 06:29:53 -0700] [37770] [INFO] Worker initialized
+[2024-10-16 06:29:53 -0700] [37771] [INFO] Booting worker with pid: 37771
+[2024-10-16 06:29:53 -0700] [37771] [INFO] Worker initialized
+[2024-10-16 06:29:53 -0700] [37772] [INFO] Booting worker with pid: 37772
+[2024-10-16 06:29:53 -0700] [37772] [INFO] Worker initialized
+[2024-10-16 06:29:53 -0700] [37773] [INFO] Booting worker with pid: 37773
+[2024-10-16 06:29:53 -0700] [37773] [INFO] Worker initialized
+[2024-10-16 06:29:53 -0700] [37774] [INFO] Booting worker with pid: 37774
+[2024-10-16 06:29:53 -0700] [37774] [INFO] Worker initialized
+[2024-10-16 06:29:53 -0700] [37775] [INFO] Booting worker with pid: 37775
+[2024-10-16 06:29:53 -0700] [37775] [INFO] Worker initialized
+[2024-10-16 06:29:53 -0700] [37776] [INFO] Booting worker with pid: 37776
+[2024-10-16 06:29:53 -0700] [37776] [INFO] Worker initialized
+[2024-10-16 06:29:54 -0700] [37777] [INFO] Booting worker with pid: 37777
+[2024-10-16 06:29:54 -0700] [37777] [INFO] Worker initialized
+[2024-10-16 06:29:54 -0700] [37778] [INFO] Booting worker with pid: 37778
+[2024-10-16 06:29:54 -0700] [37778] [INFO] Worker initialized
+[2024-10-16 06:29:54 -0700] [37779] [INFO] Booting worker with pid: 37779
+[2024-10-16 06:29:54 -0700] [37779] [INFO] Worker initialized
+[2024-10-16 06:29:54 -0700] [37780] [INFO] Booting worker with pid: 37780
+[2024-10-16 06:29:54 -0700] [37780] [INFO] Worker initialized
+[2024-10-16 06:29:54 -0700] [37781] [INFO] Booting worker with pid: 37781
+[2024-10-16 06:29:54 -0700] [37781] [INFO] Worker initialized
+[2024-10-16 06:29:54 -0700] [37782] [INFO] Booting worker with pid: 37782
+[2024-10-16 06:29:54 -0700] [37782] [INFO] Worker initialized
+[2024-10-16 06:29:54 -0700] [37783] [INFO] Booting worker with pid: 37783
+[2024-10-16 06:29:54 -0700] [37783] [INFO] Worker initialized
+[2024-10-16 06:29:54 -0700] [37784] [INFO] Booting worker with pid: 37784
+[2024-10-16 06:29:54 -0700] [37784] [INFO] Worker initialized
+[2024-10-16 06:29:54 -0700] [37767] [DEBUG] 17 workers
+[2024-10-16 06:30:21 -0700] [37779] [DEBUG] GET /summarize
+[2024-10-16 06:30:21 -0700] [37780] [DEBUG] GET /images/lumina-horiz-225x40.png
+[2024-10-16 06:30:21 -0700] [37780] [DEBUG] GET /images/lumina-favicon-96x96.png
+[2024-10-16 06:30:23 -0700] [37777] [DEBUG] POST /summarize_video
+Retrieved subtitles for video: Side Control Escape - These Small Details Change Everything
+{'title': 'Side Control Escape - These Small Details Change Everything', 'overview': 'In this video, Jon Thomas reviews his first YouTube upload, focusing on the critical skill of escaping side control in Brazilian Jiu-Jitsu (BJJ). He highlights that small details in technique can significantly enhance one’s ability to escape from this position, while introducing the top five common mistakes practitioners make.', 'video_views': '267,521', 'video_url': 'https://www.youtube.com/watch?v=DYUaYue-6BU', 'key_points': [{'point_title': 'Importance of Side Control Escapes', 'point_description': "Jon emphasizes that escaping side control is essential in maintaining effective guard in both gi and no-gi BJJ. He notes that 'having good side escape is so important because if someone can’t control you inside, it's very hard to pass your guard.' This foundational skill is critical for overall success in the sport."}, {'point_title': 'Common Mistakes in Escaping Side Control', 'point_description': 'The video outlines the top five mistakes made by practitioners when trying to escape side control. Jon explains that many people tend to push with their hands, which is ineffective in close positions. Instead, he advocates for creating space, which is the key to escaping effectively.'}, {'point_title': 'Correct Framing Techniques', 'point_description': "Jon advises using framing techniques effectively to create space against the opponent's weight. By pushing with the forearm rather than the hands, one can maintain structural integrity and leverage. He states, 'our job when we're trying to escape side is to create space between me and him.'"}, {'point_title': 'Blocking the Far Side Hip', 'point_description': 'He stresses the importance of blocking the far side hip instead of the near side, which is a common error. Jon points out that connecting the elbow and knee can prevent the opponent from maintaining a tight grip, thereby allowing for better mobility and escape opportunities.'}, {'point_title': 'Raising the Left Leg for Space', 'point_description': "Jon discusses the mistake of leaving the left foot flat during an escape attempt. He illustrates that by lifting the leg, it facilitates the knee's entry into the gap between the practitioner and their opponent, enhancing the escape path."}, {'point_title': 'Using the Outside Leg to Recompose', 'point_description': 'Once the escape is initiated, Jon emphasizes using the outside leg to re-establish guard. He describes various repositioning techniques, such as placing a foot on the hip or executing a lasso to create space while avoiding re-opening the elbow-knee connection.'}, {'point_title': 'Establishing Open Guard Post-Escape', 'point_description': "After completing the escape, Jon encourages transitioning into open guard immediately. He reminds viewers that maintaining offensive and defensive control is essential, and controlling the opponent's movements with effective grips is crucial."}, {'point_title': 'Variability in Side Control Situations', 'point_description': "He acknowledges that numerous side control variations require different escape strategies, urging practitioners to adapt their techniques. Jon states, 'there’s multiple types of side control and there’s not one technique that’s going to get you out of every situation.'"}, {'point_title': 'Encouragement to Engage with Content', 'point_description': 'Jon concludes by inviting viewers to engage with his content by liking and subscribing, emphasizing the importance of community feedback and interaction. He expresses a willingness to provide further videos addressing different control types.'}], 'engagement_analysis': "The video has garnered significant engagement with over 267,000 views, 11,065 likes, and 345 comments, indicating strong interest and appreciation from the BJJ community. This performance is consistent with the channel's branding, which focuses on practical BJJ techniques and education.", 'discourse_summary': 'The comments section features an engaging discussion where viewers share their experiences, challenges, and insights related to escaping side control, indicating a supportive learning environment among practitioners.', 'discourse_themes': [{'theme_title': 'Shared Experiences', 'theme_description': 'Many commenters share their personal struggles with side control escapes, contributing to a communal understanding of the difficulties faced by practitioners, which helps in reinforcing the instructional content of the video.'}, {'theme_title': 'Technique Clarification', 'theme_description': 'Several viewers seek clarification on specific techniques mentioned in the video, demonstrating an eagerness to deepen their understanding of the nuances of escaping side control.'}, {'theme_title': 'Appreciation for Instruction', 'theme_description': "Many comments reflect gratitude for Jon's clear explanations and instructional style, suggesting that viewers find his teaching methods helpful and easy to follow."}, {'theme_title': 'Requests for Further Content', 'theme_description': 'Viewers express interest in potential future videos covering other escape methods and variations, showcasing a demand for ongoing education within the BJJ community.'}], 'target_audience': 'The content targets Brazilian Jiu-Jitsu practitioners of all levels, particularly those seeking to improve their guard and escape techniques in both gi and no-gi formats.', 'improvement_suggestions': [{'improvement_title': 'Increase Practical Demonstrations', 'improvement_description': 'Consider incorporating more practical demonstrations of the techniques on different training partners to showcase the effectiveness and adaptability of the escapes in varied scenarios.'}, {'improvement_title': 'Use of Visual Aids', 'improvement_description': 'Incorporate visual aids or split-screen demonstrations to visually illustrate the key differences between common mistakes and proper techniques, making it easier for viewers to grasp the concepts.'}, {'improvement_title': 'Engage with Live Q&A', 'improvement_description': 'Engaging the audience with a live Q&A session post-video could help clarify viewer questions, further deepening their understanding and creating community interaction.'}]}
+[2024-10-16 06:31:18,877] INFO in app: Summary generated for video DYUaYue-6BU
+[2024-10-16 06:31:21 -0700] [37782] [DEBUG] GET /reports
+[2024-10-16 06:31:21 -0700] [37779] [DEBUG] GET /images/lumina-horiz-225x40.png
+[2024-10-16 06:31:21 -0700] [37778] [DEBUG] GET /summary/61
+[2024-10-16 06:35:21 -0700] [37774] [INFO] Worker reloading: /Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py modified
+[2024-10-16 06:35:21 -0700] [37774] [INFO] Worker exiting (pid: 37774)
+[2024-10-16 06:35:21 -0700] [37772] [INFO] Worker reloading: /Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py modified
+[2024-10-16 06:35:21 -0700] [37773] [INFO] Worker reloading: /Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py modified
+[2024-10-16 06:35:21 -0700] [37773] [INFO] Worker exiting (pid: 37773)
+[2024-10-16 06:35:21 -0700] [37772] [INFO] Worker exiting (pid: 37772)
+[2024-10-16 06:35:21 -0700] [37921] [INFO] Booting worker with pid: 37921
+[2024-10-16 06:35:21 -0700] [37921] [INFO] Worker initialized
+[2024-10-16 06:35:21 -0700] [37922] [INFO] Booting worker with pid: 37922
+[2024-10-16 06:35:21 -0700] [37923] [INFO] Booting worker with pid: 37923
+[2024-10-16 06:35:21 -0700] [37922] [INFO] Worker initialized
+[2024-10-16 06:35:21 -0700] [37923] [INFO] Worker initialized
+[2024-10-16 06:35:21 -0700] [37775] [INFO] Worker reloading: /Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py modified
+[2024-10-16 06:35:21 -0700] [37779] [INFO] Worker reloading: /Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py modified
+[2024-10-16 06:35:21 -0700] [37776] [INFO] Worker reloading: /Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py modified
+[2024-10-16 06:35:21 -0700] [37777] [INFO] Worker reloading: /Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py modified
+[2024-10-16 06:35:21 -0700] [37775] [INFO] Worker exiting (pid: 37775)
+[2024-10-16 06:35:21 -0700] [37779] [INFO] Worker exiting (pid: 37779)
+[2024-10-16 06:35:21 -0700] [37776] [INFO] Worker exiting (pid: 37776)
+[2024-10-16 06:35:21 -0700] [37777] [INFO] Worker exiting (pid: 37777)
+[2024-10-16 06:35:21 -0700] [37778] [INFO] Worker reloading: /Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py modified
+[2024-10-16 06:35:21 -0700] [37778] [INFO] Worker exiting (pid: 37778)
+[2024-10-16 06:35:21 -0700] [37770] [INFO] Worker reloading: /Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py modified
+[2024-10-16 06:35:21 -0700] [37768] [INFO] Worker reloading: /Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py modified
+[2024-10-16 06:35:21 -0700] [37780] [INFO] Worker reloading: /Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py modified
+[2024-10-16 06:35:21 -0700] [37784] [INFO] Worker reloading: /Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py modified
+[2024-10-16 06:35:21 -0700] [37783] [INFO] Worker reloading: /Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py modified
+[2024-10-16 06:35:21 -0700] [37781] [INFO] Worker reloading: /Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py modified
+[2024-10-16 06:35:21 -0700] [37770] [INFO] Worker exiting (pid: 37770)
+[2024-10-16 06:35:21 -0700] [37769] [INFO] Worker reloading: /Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py modified
+[2024-10-16 06:35:21 -0700] [37768] [INFO] Worker exiting (pid: 37768)
+[2024-10-16 06:35:21 -0700] [37782] [INFO] Worker reloading: /Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py modified
+[2024-10-16 06:35:21 -0700] [37771] [INFO] Worker reloading: /Users/chrisbeaumont/Projects/YouTubeReports/gunicorn.conf.py modified
+[2024-10-16 06:35:21 -0700] [37780] [INFO] Worker exiting (pid: 37780)
+[2024-10-16 06:35:21 -0700] [37784] [INFO] Worker exiting (pid: 37784)
+[2024-10-16 06:35:21 -0700] [37769] [INFO] Worker exiting (pid: 37769)
+[2024-10-16 06:35:21 -0700] [37771] [INFO] Worker exiting (pid: 37771)
+[2024-10-16 06:35:21 -0700] [37781] [INFO] Worker exiting (pid: 37781)
+[2024-10-16 06:35:21 -0700] [37783] [INFO] Worker exiting (pid: 37783)
+[2024-10-16 06:35:21 -0700] [37782] [INFO] Worker exiting (pid: 37782)
+[2024-10-16 06:35:21 -0700] [37924] [INFO] Booting worker with pid: 37924
+[2024-10-16 06:35:22 -0700] [37924] [INFO] Worker initialized
+[2024-10-16 06:35:22 -0700] [37925] [INFO] Booting worker with pid: 37925
+[2024-10-16 06:35:22 -0700] [37925] [INFO] Worker initialized
+[2024-10-16 06:35:22 -0700] [37767] [DEBUG] 14 workers
+[2024-10-16 06:35:22 -0700] [37926] [INFO] Booting worker with pid: 37926
+[2024-10-16 06:35:22 -0700] [37926] [INFO] Worker initialized
+[2024-10-16 06:35:22 -0700] [37927] [INFO] Booting worker with pid: 37927
+[2024-10-16 06:35:22 -0700] [37927] [INFO] Worker initialized
+[2024-10-16 06:35:22 -0700] [37928] [INFO] Booting worker with pid: 37928
+[2024-10-16 06:35:22 -0700] [37928] [INFO] Worker initialized
+[2024-10-16 06:35:22 -0700] [37767] [DEBUG] 8 workers
+[2024-10-16 06:35:22 -0700] [37929] [INFO] Booting worker with pid: 37929
+[2024-10-16 06:35:22 -0700] [37929] [INFO] Worker initialized
+[2024-10-16 06:35:22 -0700] [37930] [INFO] Booting worker with pid: 37930
+[2024-10-16 06:35:22 -0700] [37930] [INFO] Worker initialized
+[2024-10-16 06:35:22 -0700] [37931] [INFO] Booting worker with pid: 37931
+[2024-10-16 06:35:22 -0700] [37931] [INFO] Worker initialized
+[2024-10-16 06:35:22 -0700] [37932] [INFO] Booting worker with pid: 37932
+[2024-10-16 06:35:22 -0700] [37932] [INFO] Worker initialized
+[2024-10-16 06:35:22 -0700] [37933] [INFO] Booting worker with pid: 37933
+[2024-10-16 06:35:22 -0700] [37933] [INFO] Worker initialized
+[2024-10-16 06:35:22 -0700] [37934] [INFO] Booting worker with pid: 37934
+[2024-10-16 06:35:22 -0700] [37934] [INFO] Worker initialized
+[2024-10-16 06:35:22 -0700] [37935] [INFO] Booting worker with pid: 37935
+[2024-10-16 06:35:22 -0700] [37935] [INFO] Worker initialized
+[2024-10-16 06:35:22 -0700] [37936] [INFO] Booting worker with pid: 37936
+[2024-10-16 06:35:22 -0700] [37936] [INFO] Worker initialized
+[2024-10-16 06:35:22 -0700] [37937] [INFO] Booting worker with pid: 37937
+[2024-10-16 06:35:22 -0700] [37937] [INFO] Worker initialized
+[2024-10-16 06:35:22 -0700] [37767] [DEBUG] 17 workers
+[2024-10-16 06:35:30 -0700] [37767] [INFO] Handling signal: int
+[2024-10-16 06:35:30 -0700] [37922] [INFO] Worker exiting (pid: 37922)
+[2024-10-16 06:35:30 -0700] [37930] [INFO] Worker exiting (pid: 37930)
+[2024-10-16 06:35:30 -0700] [37928] [INFO] Worker exiting (pid: 37928)
+[2024-10-16 06:35:30 -0700] [37923] [INFO] Worker exiting (pid: 37923)
+[2024-10-16 06:35:30 -0700] [37926] [INFO] Worker exiting (pid: 37926)
+[2024-10-16 06:35:30 -0700] [37931] [INFO] Worker exiting (pid: 37931)
+[2024-10-16 06:35:30 -0700] [37936] [INFO] Worker exiting (pid: 37936)
+[2024-10-16 06:35:30 -0700] [37929] [INFO] Worker exiting (pid: 37929)
+[2024-10-16 06:35:30 -0700] [37925] [INFO] Worker exiting (pid: 37925)
+[2024-10-16 06:35:30 -0700] [37933] [INFO] Worker exiting (pid: 37933)
+[2024-10-16 06:35:30 -0700] [37921] [INFO] Worker exiting (pid: 37921)
+[2024-10-16 06:35:30 -0700] [37935] [INFO] Worker exiting (pid: 37935)
+[2024-10-16 06:35:30 -0700] [37937] [INFO] Worker exiting (pid: 37937)
+[2024-10-16 06:35:30 -0700] [37932] [INFO] Worker exiting (pid: 37932)
+[2024-10-16 06:35:30 -0700] [37934] [INFO] Worker exiting (pid: 37934)
+[2024-10-16 06:35:30 -0700] [37927] [INFO] Worker exiting (pid: 37927)
+[2024-10-16 06:35:30 -0700] [37924] [INFO] Worker exiting (pid: 37924)
+[2024-10-16 06:35:31 -0700] [37767] [INFO] Shutting down: Master
+[2024-10-16 06:35:31 -0700] [37767] [INFO] Stopping Lumina server
+[2024-10-16 06:35:41 -0700] [37995] [DEBUG] Current configuration:
+  config: gunicorn.conf.py
+  wsgi_app: None
+  bind: ['0.0.0.0:80']
+  backlog: 2048
+  workers: 17
+  worker_class: sync
+  threads: 1
+  worker_connections: 1000
+  max_requests: 1000
+  max_requests_jitter: 50
+  timeout: 120
+  graceful_timeout: 30
+  keepalive: 2
+  limit_request_line: 4094
+  limit_request_fields: 100
+  limit_request_field_size: 8190
+  reload: True
+  reload_engine: auto
+  reload_extra_files: []
+  spew: False
+  check_config: False
+  print_config: False
+  preload_app: True
+  sendfile: None
+  reuse_port: False
+  chdir: /Users/chrisbeaumont/Projects/YouTubeReports
+  daemon: False
+  raw_env: []
+  pidfile: None
+  worker_tmp_dir: None
+  user: 0
+  group: 0
+  umask: 0
+  initgroups: False
+  tmp_upload_dir: None
+  secure_scheme_headers: {'X-FORWARDED-PROTOCOL': 'ssl', 'X-FORWARDED-PROTO': 'https', 'X-FORWARDED-SSL': 'on'}
+  forwarded_allow_ips: ['127.0.0.1']
+  accesslog: /Users/chrisbeaumont/Projects/YouTubeReports/logs/gunicorn_access.log
+  disable_redirect_access_to_syslog: False
+  access_log_format: %(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"
+  errorlog: /Users/chrisbeaumont/Projects/YouTubeReports/logs/gunicorn_error.log
+  loglevel: debug
+  capture_output: True
+  logger_class: gunicorn.glogging.Logger
+  logconfig: None
+  logconfig_dict: {}
+  logconfig_json: None
+  syslog_addr: unix:///var/run/syslog
+  syslog: False
+  syslog_prefix: None
+  syslog_facility: user
+  enable_stdio_inheritance: True
+  statsd_host: None
+  dogstatsd_tags: 
+  statsd_prefix: 
+  proc_name: lumina
+  default_proc_name: app:app
+  pythonpath: None
+  paste: None
+  on_starting: <function on_starting at 0x1018b8680>
+  on_reload: <function OnReload.on_reload at 0x10189a020>
+  when_ready: <function WhenReady.when_ready at 0x10189a160>
+  pre_fork: <function Prefork.pre_fork at 0x10189a340>
+  post_fork: <function Postfork.post_fork at 0x10189a480>
+  post_worker_init: <function post_worker_init at 0x1018b8720>
+  worker_int: <function WorkerInt.worker_int at 0x10189a700>
+  worker_abort: <function WorkerAbort.worker_abort at 0x10189a840>
+  pre_exec: <function PreExec.pre_exec at 0x10189a980>
+  pre_request: <function PreRequest.pre_request at 0x10189aac0>
+  post_request: <function PostRequest.post_request at 0x10189ab60>
+  child_exit: <function ChildExit.child_exit at 0x10189aca0>
+  worker_exit: <function WorkerExit.worker_exit at 0x10189ade0>
+  nworkers_changed: <function NumWorkersChanged.nworkers_changed at 0x10189af20>
+  on_exit: <function on_exit at 0x1018b85e0>
+  ssl_context: <function NewSSLContext.ssl_context at 0x10189b240>
+  proxy_protocol: False
+  proxy_allow_ips: ['127.0.0.1']
+  keyfile: None
+  certfile: None
+  ssl_version: 2
+  cert_reqs: 0
+  ca_certs: None
+  suppress_ragged_eofs: True
+  do_handshake_on_connect: False
+  ciphers: None
+  raw_paste_global_conf: []
+  strip_header_spaces: False
+Traceback (most recent call last):
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/bin/gunicorn", line 8, in <module>
+    sys.exit(run())
+             ^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/wsgiapp.py", line 67, in run
+    WSGIApplication("%(prog)s [OPTIONS] [APP_MODULE]").run()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/base.py", line 236, in run
+    super().run()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/base.py", line 72, in run
+    Arbiter(self).run()
+    ^^^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 58, in __init__
+    self.setup(app)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 118, in setup
+    self.app.wsgi()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/base.py", line 67, in wsgi
+    self.callable = self.load()
+                    ^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/wsgiapp.py", line 58, in load
+    return self.load_wsgiapp()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/wsgiapp.py", line 48, in load_wsgiapp
+    return util.import_app(self.app_uri)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/util.py", line 371, in import_app
+    mod = importlib.import_module(module)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 995, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/chrisbeaumont/Projects/YouTubeReports/app.py", line 14, in <module>
+    from youtube_utils import extract_channel_id, fetch_channel_data, extract_video_id, get_video_data
+  File "/Users/chrisbeaumont/Projects/YouTubeReports/youtube_utils.py", line 40, in <module>
+    youtube = googleapiclient.discovery.build("youtube", "v3", developerKey=API_KEY)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/googleapiclient/_helpers.py", line 130, in positional_wrapper
+    return wrapped(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/googleapiclient/discovery.py", line 315, in build
+    service = build_from_document(
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/googleapiclient/_helpers.py", line 130, in positional_wrapper
+    return wrapped(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/googleapiclient/discovery.py", line 616, in build_from_document
+    credentials = _auth.default_credentials(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/googleapiclient/_auth.py", line 57, in default_credentials
+    credentials, _ = google.auth.default(
+                     ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/google/auth/_default.py", line 691, in default
+    raise exceptions.DefaultCredentialsError(_CLOUD_SDK_MISSING_CREDENTIALS)
+google.auth.exceptions.DefaultCredentialsError: Your default credentials were not found. To set up Application Default Credentials, see https://cloud.google.com/docs/authentication/external/set-up-adc for more information.
+[2024-10-16 06:41:57 -0700] [39000] [DEBUG] Current configuration:
+  config: gunicorn.conf.py
+  wsgi_app: None
+  bind: ['0.0.0.0:8000']
+  backlog: 2048
+  workers: 17
+  worker_class: sync
+  threads: 1
+  worker_connections: 1000
+  max_requests: 1000
+  max_requests_jitter: 50
+  timeout: 120
+  graceful_timeout: 30
+  keepalive: 2
+  limit_request_line: 4094
+  limit_request_fields: 100
+  limit_request_field_size: 8190
+  reload: True
+  reload_engine: auto
+  reload_extra_files: []
+  spew: False
+  check_config: False
+  print_config: False
+  preload_app: True
+  sendfile: None
+  reuse_port: False
+  chdir: /Users/chrisbeaumont/Projects/YouTubeReports
+  daemon: False
+  raw_env: []
+  pidfile: None
+  worker_tmp_dir: None
+  user: 0
+  group: 0
+  umask: 0
+  initgroups: False
+  tmp_upload_dir: None
+  secure_scheme_headers: {'X-FORWARDED-PROTOCOL': 'ssl', 'X-FORWARDED-PROTO': 'https', 'X-FORWARDED-SSL': 'on'}
+  forwarded_allow_ips: ['127.0.0.1']
+  accesslog: /Users/chrisbeaumont/Projects/YouTubeReports/logs/gunicorn_access.log
+  disable_redirect_access_to_syslog: False
+  access_log_format: %(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"
+  errorlog: /Users/chrisbeaumont/Projects/YouTubeReports/logs/gunicorn_error.log
+  loglevel: debug
+  capture_output: True
+  logger_class: gunicorn.glogging.Logger
+  logconfig: None
+  logconfig_dict: {}
+  logconfig_json: None
+  syslog_addr: unix:///var/run/syslog
+  syslog: False
+  syslog_prefix: None
+  syslog_facility: user
+  enable_stdio_inheritance: True
+  statsd_host: None
+  dogstatsd_tags: 
+  statsd_prefix: 
+  proc_name: lumina
+  default_proc_name: app:app
+  pythonpath: None
+  paste: None
+  on_starting: <function on_starting at 0x1056ac680>
+  on_reload: <function OnReload.on_reload at 0x10568e020>
+  when_ready: <function WhenReady.when_ready at 0x10568e160>
+  pre_fork: <function Prefork.pre_fork at 0x10568e340>
+  post_fork: <function Postfork.post_fork at 0x10568e480>
+  post_worker_init: <function post_worker_init at 0x1056ac720>
+  worker_int: <function WorkerInt.worker_int at 0x10568e700>
+  worker_abort: <function WorkerAbort.worker_abort at 0x10568e840>
+  pre_exec: <function PreExec.pre_exec at 0x10568e980>
+  pre_request: <function PreRequest.pre_request at 0x10568eac0>
+  post_request: <function PostRequest.post_request at 0x10568eb60>
+  child_exit: <function ChildExit.child_exit at 0x10568eca0>
+  worker_exit: <function WorkerExit.worker_exit at 0x10568ede0>
+  nworkers_changed: <function NumWorkersChanged.nworkers_changed at 0x10568ef20>
+  on_exit: <function on_exit at 0x1056ac5e0>
+  ssl_context: <function NewSSLContext.ssl_context at 0x10568f240>
+  proxy_protocol: False
+  proxy_allow_ips: ['127.0.0.1']
+  keyfile: None
+  certfile: None
+  ssl_version: 2
+  cert_reqs: 0
+  ca_certs: None
+  suppress_ragged_eofs: True
+  do_handshake_on_connect: False
+  ciphers: None
+  raw_paste_global_conf: []
+  strip_header_spaces: False
+Traceback (most recent call last):
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/bin/gunicorn", line 8, in <module>
+    sys.exit(run())
+             ^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/wsgiapp.py", line 67, in run
+    WSGIApplication("%(prog)s [OPTIONS] [APP_MODULE]").run()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/base.py", line 236, in run
+    super().run()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/base.py", line 72, in run
+    Arbiter(self).run()
+    ^^^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 58, in __init__
+    self.setup(app)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 118, in setup
+    self.app.wsgi()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/base.py", line 67, in wsgi
+    self.callable = self.load()
+                    ^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/wsgiapp.py", line 58, in load
+    return self.load_wsgiapp()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/wsgiapp.py", line 48, in load_wsgiapp
+    return util.import_app(self.app_uri)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/util.py", line 371, in import_app
+    mod = importlib.import_module(module)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 995, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/chrisbeaumont/Projects/YouTubeReports/app.py", line 14, in <module>
+    from youtube_utils import extract_channel_id, fetch_channel_data, extract_video_id, get_video_data
+  File "/Users/chrisbeaumont/Projects/YouTubeReports/youtube_utils.py", line 40, in <module>
+    youtube = googleapiclient.discovery.build("youtube", "v3", developerKey=API_KEY)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/googleapiclient/_helpers.py", line 130, in positional_wrapper
+    return wrapped(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/googleapiclient/discovery.py", line 315, in build
+    service = build_from_document(
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/googleapiclient/_helpers.py", line 130, in positional_wrapper
+    return wrapped(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/googleapiclient/discovery.py", line 616, in build_from_document
+    credentials = _auth.default_credentials(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/googleapiclient/_auth.py", line 57, in default_credentials
+    credentials, _ = google.auth.default(
+                     ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/google/auth/_default.py", line 691, in default
+    raise exceptions.DefaultCredentialsError(_CLOUD_SDK_MISSING_CREDENTIALS)
+google.auth.exceptions.DefaultCredentialsError: Your default credentials were not found. To set up Application Default Credentials, see https://cloud.google.com/docs/authentication/external/set-up-adc for more information.
+[2024-10-16 06:49:45 -0700] [39730] [DEBUG] Current configuration:
+  config: gunicorn.conf.py
+  wsgi_app: None
+  bind: ['0.0.0.0:8000']
+  backlog: 2048
+  workers: 17
+  worker_class: sync
+  threads: 1
+  worker_connections: 1000
+  max_requests: 1000
+  max_requests_jitter: 50
+  timeout: 120
+  graceful_timeout: 30
+  keepalive: 2
+  limit_request_line: 4094
+  limit_request_fields: 100
+  limit_request_field_size: 8190
+  reload: True
+  reload_engine: auto
+  reload_extra_files: []
+  spew: False
+  check_config: False
+  print_config: False
+  preload_app: True
+  sendfile: None
+  reuse_port: False
+  chdir: /Users/chrisbeaumont/Projects/YouTubeReports
+  daemon: False
+  raw_env: []
+  pidfile: None
+  worker_tmp_dir: None
+  user: 501
+  group: 20
+  umask: 0
+  initgroups: False
+  tmp_upload_dir: None
+  secure_scheme_headers: {'X-FORWARDED-PROTOCOL': 'ssl', 'X-FORWARDED-PROTO': 'https', 'X-FORWARDED-SSL': 'on'}
+  forwarded_allow_ips: ['127.0.0.1']
+  accesslog: /Users/chrisbeaumont/Projects/YouTubeReports/logs/gunicorn_access.log
+  disable_redirect_access_to_syslog: False
+  access_log_format: %(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"
+  errorlog: /Users/chrisbeaumont/Projects/YouTubeReports/logs/gunicorn_error.log
+  loglevel: debug
+  capture_output: True
+  logger_class: gunicorn.glogging.Logger
+  logconfig: None
+  logconfig_dict: {}
+  logconfig_json: None
+  syslog_addr: unix:///var/run/syslog
+  syslog: False
+  syslog_prefix: None
+  syslog_facility: user
+  enable_stdio_inheritance: True
+  statsd_host: None
+  dogstatsd_tags: 
+  statsd_prefix: 
+  proc_name: lumina
+  default_proc_name: app:app
+  pythonpath: None
+  paste: None
+  on_starting: <function on_starting at 0x100eb8680>
+  on_reload: <function OnReload.on_reload at 0x100e9a020>
+  when_ready: <function WhenReady.when_ready at 0x100e9a160>
+  pre_fork: <function Prefork.pre_fork at 0x100e9a340>
+  post_fork: <function Postfork.post_fork at 0x100e9a480>
+  post_worker_init: <function post_worker_init at 0x100eb8720>
+  worker_int: <function WorkerInt.worker_int at 0x100e9a700>
+  worker_abort: <function WorkerAbort.worker_abort at 0x100e9a840>
+  pre_exec: <function PreExec.pre_exec at 0x100e9a980>
+  pre_request: <function PreRequest.pre_request at 0x100e9aac0>
+  post_request: <function PostRequest.post_request at 0x100e9ab60>
+  child_exit: <function ChildExit.child_exit at 0x100e9aca0>
+  worker_exit: <function WorkerExit.worker_exit at 0x100e9ade0>
+  nworkers_changed: <function NumWorkersChanged.nworkers_changed at 0x100e9af20>
+  on_exit: <function on_exit at 0x100eb85e0>
+  ssl_context: <function NewSSLContext.ssl_context at 0x100e9b240>
+  proxy_protocol: False
+  proxy_allow_ips: ['127.0.0.1']
+  keyfile: None
+  certfile: None
+  ssl_version: 2
+  cert_reqs: 0
+  ca_certs: None
+  suppress_ragged_eofs: True
+  do_handshake_on_connect: False
+  ciphers: None
+  raw_paste_global_conf: []
+  strip_header_spaces: False
+[2024-10-16 06:49:46,005] INFO in app: Lumina startup
+[2024-10-16 06:49:46 -0700] [39730] [INFO] Starting gunicorn 21.2.0
+[2024-10-16 06:49:46 -0700] [39730] [INFO] Starting Lumina server
+[2024-10-16 06:49:46 -0700] [39730] [DEBUG] Arbiter booted
+[2024-10-16 06:49:46 -0700] [39730] [INFO] Listening at: http://0.0.0.0:8000 (39730)
+[2024-10-16 06:49:46 -0700] [39730] [INFO] Using worker: sync
+[2024-10-16 06:49:46 -0700] [39731] [INFO] Booting worker with pid: 39731
+[2024-10-16 06:49:46 -0700] [39731] [INFO] Worker initialized
+[2024-10-16 06:49:46 -0700] [39732] [INFO] Booting worker with pid: 39732
+[2024-10-16 06:49:46 -0700] [39732] [INFO] Worker initialized
+[2024-10-16 06:49:46 -0700] [39733] [INFO] Booting worker with pid: 39733
+[2024-10-16 06:49:46 -0700] [39733] [INFO] Worker initialized
+[2024-10-16 06:49:46 -0700] [39734] [INFO] Booting worker with pid: 39734
+[2024-10-16 06:49:46 -0700] [39734] [INFO] Worker initialized
+[2024-10-16 06:49:46 -0700] [39735] [INFO] Booting worker with pid: 39735
+[2024-10-16 06:49:46 -0700] [39735] [INFO] Worker initialized
+[2024-10-16 06:49:46 -0700] [39736] [INFO] Booting worker with pid: 39736
+[2024-10-16 06:49:46 -0700] [39736] [INFO] Worker initialized
+[2024-10-16 06:49:46 -0700] [39737] [INFO] Booting worker with pid: 39737
+[2024-10-16 06:49:46 -0700] [39737] [INFO] Worker initialized
+[2024-10-16 06:49:46 -0700] [39738] [INFO] Booting worker with pid: 39738
+[2024-10-16 06:49:46 -0700] [39738] [INFO] Worker initialized
+[2024-10-16 06:49:46 -0700] [39739] [INFO] Booting worker with pid: 39739
+[2024-10-16 06:49:46 -0700] [39739] [INFO] Worker initialized
+[2024-10-16 06:49:46 -0700] [39740] [INFO] Booting worker with pid: 39740
+[2024-10-16 06:49:46 -0700] [39740] [INFO] Worker initialized
+[2024-10-16 06:49:46 -0700] [39741] [INFO] Booting worker with pid: 39741
+[2024-10-16 06:49:46 -0700] [39741] [INFO] Worker initialized
+[2024-10-16 06:49:46 -0700] [39742] [INFO] Booting worker with pid: 39742
+[2024-10-16 06:49:46 -0700] [39742] [INFO] Worker initialized
+[2024-10-16 06:49:47 -0700] [39743] [INFO] Booting worker with pid: 39743
+[2024-10-16 06:49:47 -0700] [39743] [INFO] Worker initialized
+[2024-10-16 06:49:47 -0700] [39744] [INFO] Booting worker with pid: 39744
+[2024-10-16 06:49:47 -0700] [39745] [INFO] Booting worker with pid: 39745
+[2024-10-16 06:49:47 -0700] [39744] [INFO] Worker initialized
+[2024-10-16 06:49:47 -0700] [39745] [INFO] Worker initialized
+[2024-10-16 06:49:47 -0700] [39746] [INFO] Booting worker with pid: 39746
+[2024-10-16 06:49:47 -0700] [39746] [INFO] Worker initialized
+[2024-10-16 06:49:47 -0700] [39747] [INFO] Booting worker with pid: 39747
+[2024-10-16 06:49:47 -0700] [39747] [INFO] Worker initialized
+[2024-10-16 06:49:47 -0700] [39730] [DEBUG] 17 workers
+[2024-10-16 06:50:12 -0700] [39743] [DEBUG] GET /
+[2024-10-16 06:50:12 -0700] [39742] [DEBUG] GET /images/dunes-narrow.png
+[2024-10-16 06:50:12 -0700] [39735] [DEBUG] GET /images/grade-up.png
+[2024-10-16 06:50:12 -0700] [39732] [DEBUG] GET /images/lumina-horiz-full.png
+[2024-10-16 06:50:12 -0700] [39741] [DEBUG] GET /images/demo-reports.png
+[2024-10-16 06:51:04 -0700] [39743] [DEBUG] GET /login
+[2024-10-16 06:51:04 -0700] [39744] [DEBUG] GET /images/lumina-horiz-225x40.png
+[2024-10-16 06:51:07 -0700] [39733] [DEBUG] GET /reports
+[2024-10-16 06:51:07 -0700] [39740] [DEBUG] GET /images/lumina-horiz-225x40.png
+[2024-10-16 06:51:16 -0700] [39736] [DEBUG] GET /account
+[2024-10-16 06:51:16 -0700] [39731] [DEBUG] GET /images/lumina-horiz-225x40.png
+[2024-10-16 06:51:20 -0700] [39737] [DEBUG] GET /reports
+[2024-10-16 06:51:20 -0700] [39738] [DEBUG] GET /images/lumina-horiz-225x40.png
+[2024-10-16 06:51:21 -0700] [39742] [DEBUG] GET /summarize
+[2024-10-16 06:51:21 -0700] [39745] [DEBUG] GET /images/lumina-horiz-225x40.png
+[2024-10-16 06:51:22 -0700] [39732] [DEBUG] GET /analyze
+[2024-10-16 06:51:22 -0700] [39742] [DEBUG] GET /images/lumina-horiz-225x40.png
+[2024-10-16 06:51:23 -0700] [39733] [DEBUG] GET /summarize
+[2024-10-16 06:51:23 -0700] [39739] [DEBUG] GET /images/lumina-horiz-225x40.png
+[2024-10-16 06:51:43 -0700] [39747] [DEBUG] GET /analyze
+[2024-10-16 06:51:43 -0700] [39746] [DEBUG] GET /images/lumina-horiz-225x40.png
+[2024-10-16 06:52:01 -0700] [39736] [DEBUG] POST /analyze_channel
+Retrieved subtitles for video: EVERYONE Should Know This Mount/Back Double Threat
+Retrieved subtitles for video: Reverse Grip Knee Cut From HQ
+Retrieved subtitles for video: INSANE Loop Choke From Top
+Retrieved subtitles for video: Double Sleeve Butterfly - INSANE Sweeping Power
+Retrieved subtitles for video: Powerful Armbar From Spider Guard Sweep
+Retrieved subtitles for video: The Easy Way to Learn Side Control Escape
+Retrieved subtitles for video: Stop The Knee Shield With The Shin Slide
+{
+    "consultation_report": {
+        "title": "YouTube Channel Analysis for JonThomasBJJ",
+        "categorisation": [
+            {
+                "content_categories": ["Education", "Fitness & Health", "Sports"],
+                "content_category_justification": "This channel focuses on Jiu Jitsu techniques and training methods, aimed at educating viewers and fostering skills in martial arts. The content is instructional, concentrating on practical advice for fitness enthusiasts and athletes.",
+                "video_formats": ["Tutorial/How-To", "Explainer", "Live Stream"]
+            }
+        ],
+        "sections": [
+            {
+                "number": 1,
+                "subtitle": "Executive Summary",
+                "content": [
+                    {
+                        "sections": [
+                            {
+                                "number": 1,
+                                "subtitle": "Content Summary",
+                                "content": "JonThomasBJJ delivers high-quality Jiu Jitsu tutorials that emphasize practical techniques suitable for both sparring and competition. The channel's strategy focuses on straightforward instruction without unnecessary complications, making it appealing to both beginners and more experienced practitioners seeking to refine their skills. Content is consistently updated with a structured learning approach, ensuring that subscribers can follow along with new techniques and strategies."
+                            },
+                            {
+                                "number": 2,
+                                "subtitle": "Channel hosts and personalities",
+                                "content": "The channel is hosted by World Champion Jonathan Thomas, a reputable figure in the Jiu Jitsu community. His expertise and credibility contribute significantly to the channel's trustworthiness and appeal. The channel positions him not just as a teacher but also as a mentor advocating for effective martial arts strategies."
+                            },
+                            {
+                                "number": 3,
+                                "subtitle": "Channel prominence and competitive landscape",
+                                "content": "JonThomasBJJ stands out in the crowded arena of Jiu Jitsu channels due to its clear focus on practical, competition-ready techniques and a personal touch that connects with viewers. In a competitive landscape filled with flashy or overly complex content, this channel's dedication to teaching what works in real scenarios has garnered a loyal audience and significant growth."
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "number": 2,
+                "subtitle": "Key Metrics",
+                "content": [
+                    {
+                        "sections": [
+                            {
+                                "number": 1,
+                                "subtitle": "Average views per video",
+                                "content": "With a total view count of approximately 14.59 million across 450 videos, the channel averages about 32,000 views per video. Notably, while the median views per video hover around the 10,000 mark, certain videos spike dramatically, revealing potential viral success indicators."
+                            },
+                            {
+                                "number": 2,
+                                "subtitle": "Top performing video category",
+                                "content": "The most successful content category is focused on detailed technique breakdowns, often seen in tutorial formats. Videos discussing specific moves tend to achieve higher view counts and engagement, indicating that the audience seeks step-by-step guidance in learning techniques."
+                            },
+                            {
+                                "number": 3,
+                                "subtitle": "Average number of videos published per week",
+                                "content": "The channel has a solid output with over two videos released weekly. This frequency is on par with leading Jiu Jitsu YouTube channels such as 'Gracie Breakdown' and 'BJJ Fanatics', ensuring that JonThomasBJJ remains competitive in terms of content availability."
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "number": 3,
+                "subtitle": "Trends",
+                "content": [
+                    {
+                        "sections": [
+                            {
+                                "number": 1,
+                                "subtitle": "Focus on practical techniques",
+                                "content": "Videos consistently emphasize practical, competition-tested techniques, which resonate with viewers looking for applicable skills rather than theoretical knowledge. This trend is sustained by Jonathanâs professional background as a competitive fighter."
+                            },
+                            {
+                                "number": 2,
+                                "subtitle": "Engaging subtitles and clear instructions",
+                                "content": "The use of comprehensive subtitles in educational content has become a signature of this channel. This trend enhances understanding and retention, reflecting a commitment to accessibility for viewers at different learning levels."
+                            },
+                            {
+                                "number": 3,
+                                "subtitle": "Integration of self-promotion and branding",
+                                "content": "JonThomasBJJ effectively integrates promotional content for personal instructional courses, further monetizing the channel. Videos often direct viewers to the website for more in-depth training materials, which creates additional revenue streams without detracting from the original content."
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "number": 4,
+                "subtitle": "Oratry Style",
+                "content": [
+                    {
+                        "sections": [
+                            {
+                                "number": 1,
+                                "subtitle": "Instructional Tone",
+                                "content": "The overall oratory style is authoritative and instructional, with Jonathan articulating techniques in a way that is approachable yet professional. He employs phrases like âthis new KNE cut is so powerfulâ, which not only convey enthusiasm but also underline the effectiveness of techniques being presented."
+                            },
+                            {
+                                "number": 2,
+                                "subtitle": "Engagement with viewers",
+                                "content": "Jonathan frequently engages with the audience in his videos, using inclusive language such as âif youâre enjoying this content be sure to check out my websiteâ. This approach fosters a community feeling, encouraging interaction and building loyalty among viewers."
+                            },
+                            {
+                                "number": 3,
+                                "subtitle": "Structured Guidance",
+                                "content": "The videos structure instructions in a step-by-step fashion, illustrating processes seamlessly. For instance, he states, âIâm going to control the deea legâ, which provides clear steps for the learners. It signals a methodological approach to conveying complex techniques in a digestible manner."
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "number": 5,
+                "subtitle": "Recommendations",
+                "content": [
+                    {
+                        "sections": [
+                            {
+                                "number": 1,
+                                "subtitle": "Enhance Community Interaction",
+                                "content": "Implementing a community section or encouraging more interactive content such as live Q&A sessions could enhance viewer engagement. Considering adding polls about which techniques the audience would like to learn next could further tailor content to audience preferences."
+                            },
+                            {
+                                "number": 2,
+                                "subtitle": "Expand Social Media Presence",
+                                "content": "Increasing the reach on platforms like Instagram, TikTok, or even a podcast series can diversify content exposure. Highlighting techniques through short video formats could attract new subscribers and funnel them towards YouTube."
+                            },
+                            {
+                                "number": 3,
+                                "subtitle": "Collaborate with Other Influencers",
+                                "content": "Collaborating with other influential figures in the martial arts community could introduce the channel to wider audiences. Such partnerships may involve joint instructional videos, sparring sessions, or competitive showcases, demonstrating credibility while expanding reach."
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "number": 6,
+                "subtitle": "Limitations",
+                "content": "The data reflects only video output and basic engagement metrics, without insights into demographics, viewer retention rates, or subscriber engagement over time. This information is crucial to fully understanding viewer preferences and the overall growth trajectory of the channel."
+            }
+        ]
+    }
+}
+[2024-10-16 06:53:13 -0700] [39741] [DEBUG] GET /reports
+[2024-10-16 06:53:13 -0700] [39747] [DEBUG] GET /images/lumina-horiz-225x40.png
+[2024-10-16 06:53:14 -0700] [39732] [DEBUG] GET /report/43
+[2024-10-16 06:55:14 -0700] [39730] [CRITICAL] WORKER TIMEOUT (pid:39746)
+[2024-10-16 06:55:14 -0700] [39746] [INFO] Worker exiting (pid: 39746)
+[2024-10-16 06:55:15 -0700] [39730] [ERROR] Worker (pid:39746) exited with code 1
+[2024-10-16 06:55:15 -0700] [39730] [ERROR] Worker (pid:39746) exited with code 1.
+[2024-10-16 06:55:15 -0700] [40021] [INFO] Booting worker with pid: 40021
+[2024-10-16 06:55:15 -0700] [40021] [INFO] Worker initialized

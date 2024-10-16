@@ -9,7 +9,10 @@ import requests
 import re
 import xml.etree.ElementTree as ET
 from datetime import datetime
+from config import Config
 
+## DEPRECATED CONFIG SYSTEM
+'''
 def load_config():
     try:
         with open('config.json', 'r') as config_file:
@@ -23,14 +26,15 @@ def load_config():
 
 # Load configuration
 app_config = load_config()
+'''
 
 # Use configuration values
-API_KEY = os.environ.get('YOUTUBE_API_KEY')
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-MAX_VIDEOS = app_config['max_videos_to_fetch']
-MAX_VIDEOS_FOR_SUBTITLES = app_config['max_videos_for_subtitles']
-OPENAI_MODEL = app_config['openai_model']
-MAX_TOKENS = app_config['max_tokens']
+API_KEY = Config.YOUTUBE_API_KEY # os.environ.get('YOUTUBE_API_KEY')
+OPENAI_API_KEY = Config.OPENAI_API_KEY # os.environ.get('OPENAI_API_KEY')
+MAX_VIDEOS = Config.MAX_VIDEOS_TO_FETCH # app_config['max_videos_to_fetch']
+MAX_VIDEOS_FOR_SUBTITLES = Config.MAX_VIDEOS_FOR_SUBTITLES # app_config['max_videos_for_subtitles']
+OPENAI_MODEL = Config.OPENAI_MODEL # app_config['openai_model']
+MAX_TOKENS = Config.MAX_TOKENS # app_config['max_tokens']
 
 # Initialize YouTube API client
 youtube = googleapiclient.discovery.build("youtube", "v3", developerKey=API_KEY)

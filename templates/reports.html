@@ -26,9 +26,10 @@
     <!-- Grid View -->
     <div id="grid-view-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for item in combined_data %}
-            <div class="report-card bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 {% if item.type == 'channel_report' %}channel-report{% else %}video-summary{% endif %} cursor-pointer" style="aspect-ratio: 16/9;" data-id="{{ item.item.id }}">            {% if item.type == 'channel_report' %}
+            <div class="report-card bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 {% if item.type == 'channel_report' %}channel-report{% else %}video-summary{% endif %} cursor-pointer" style="aspect-ratio: 16/9;" data-id="{{ item.item.id }}">
+            {% if item.type == 'channel_report' %}
                 {% set raw_data = item.item.raw_channel_data | from_json %}
-                <div class="relative h-full bg-cover bg-center" style="background-image: url('{{ raw_data.banner_url }}');">
+                <div class="relative h-full bg-cover bg-center" style="background-image: url('{{ raw_data.banner_url }}=w2120-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj');">
                     <div class="absolute inset-0 bg-black bg-opacity-50"></div>
                     <div class="absolute inset-0 p-4 flex flex-col justify-between">
                         <div class="flex items-center">
@@ -139,7 +140,12 @@
     function viewReport(type, id) {
         let url = type === 'channel_report' ? `/report/${id}` : `/summary/${id}`;
         fetch(url)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             const modalContent = document.getElementById('modal-content');
             
@@ -204,7 +210,7 @@
 
             content += `
                 <div class="mb-6">
-                    ${raw_data.banner_url ? `<img src="${raw_data.banner_url}" alt="Channel Banner" class="w-full h-32 object-cover rounded-t-lg">` : ''}
+                    ${raw_data.banner_url ? `<img src="${raw_data.banner_url}=w2120-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj" alt="Channel Banner" class="w-full h-32 object-cover rounded-t-lg">` : ''}
                     <div class="bg-zinc-100 p-4 rounded-b-lg">
                         <div class="flex items-center">
                             ${raw_data.avatar_url ? `<img src="${raw_data.avatar_url}" alt="Channel Avatar" class="w-16 h-16 rounded-full mr-4">` : ''}
@@ -251,7 +257,7 @@
 
         content += `<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">`;
 
-        if (report.consultation_report && report.consultation_report.sections) {
+        if (report && report.consultation_report && report.consultation_report.sections) {
             const sections = report.consultation_report.sections;
             
             content += `
@@ -276,30 +282,30 @@
         }
 
         function displaySection(section, title, isSimple = false) {
-        if (!section || !section.content) {
-            return '';
-        }
+            if (!section || !section.content) {
+                return '';
+            }
 
-        let sectionContent = '';
-        if (isSimple) {
-            sectionContent = `<p class="report-text">${section.content}</p>`;
-        } else {
-            sectionContent = section.content[0].sections.map(subsection => `
-                <div class="mb-4">
-                    <h4 class="font-semibold text-base lg:text-lg mb-2">${subsection.subtitle}</h4>
-                    <p class="report-text">${subsection.content}</p>
-                </div>
-            `).join('');
-        }
+            let sectionContent = '';
+            if (isSimple) {
+                sectionContent = `<p class="report-text">${section.content}</p>`;
+            } else {
+                sectionContent = section.content[0].sections.map(subsection => `
+                    <div class="mb-4">
+                        <h4 class="font-semibold text-base lg:text-lg mb-2">${subsection.subtitle}</h4>
+                        <p class="report-text">${subsection.content}</p>
+                    </div>
+                `).join('');
+            }
 
-        return `
-            <div class="report-panel bg-zinc-100 p-4 rounded-lg">
-                <h3 class="text-xl lg:text-2xl font-semibold mb-4">${title}</h3>
-                <div class="report-panel-content">
-                    ${sectionContent}
+            return `
+                <div class="report-panel bg-zinc-100 p-4 rounded-lg">
+                    <h3 class="text-xl lg:text-2xl font-semibold mb-4">${title}</h3>
+                    <div class="report-panel-content">
+                        ${sectionContent}
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
         }
 
         function displaySummary(data, container) {
@@ -339,18 +345,8 @@
                         `)}
                     </div>
                     <div>
-                        ${displaySummarySection('Target Audience', `<p class="report-text">${summary.target_audience}</p>`)}
-                        ${displaySummarySection('Discourse', `
-                            <p class="report-text mb-4">${summary.discourse_summary}</p>
-                            <ul class="list-disc pl-5 report-text">
-                                ${summary.discourse_themes.map(theme => `
-                                    <li class="mb-2">
-                                        <strong>${theme.theme_title}</strong>: ${theme.theme_description}
-                                    </li>
-                                `).join('')}
-                            </ul>
-                        `)}
                         ${displaySummarySection('Engagement Analysis', `<p class="report-text">${summary.engagement_analysis}</p>`)}
+                        ${displaySummarySection('Target Audience', `<p class="report-text">${summary.target_audience}</p>`)}
                         ${displaySummarySection('Improvement Suggestions', `
                             <ul class="list-disc pl-5 report-text">
                                 ${summary.improvement_suggestions.map(suggestion => `
@@ -426,7 +422,7 @@
         });
     });
 
-     // Function to automatically open the modal for a new report or summary
+    // Function to automatically open the modal for a new report or summary
     function openNewItemModal() {
         const urlParams = new URLSearchParams(window.location.search);
         const newReportId = urlParams.get('new_report');
