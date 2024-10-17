@@ -623,7 +623,7 @@ def summarize_video():
             video_data = get_video_data(video_id)
 
             if not video_data:
-                yield json.dumps({'type': 'error', 'message': 'Unable to fetch video data'}) + '\n'
+                yield json.dumps({'type': 'error', 'message': 'Unable to fetch video data or subtitles not available'}) + '\n'
                 return
 
             video_title = video_data[0].get('title', 'Unknown Video')

@@ -10,6 +10,7 @@ import re
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from config import Config
+import logging
 
 ## DEPRECATED CONFIG SYSTEM
 '''
@@ -95,46 +96,52 @@ def extract_channel_id(url):
 def get_video_data(video_id, include_comments=False):
     output = []
 
-    video_response = youtube.videos().list(
-        part="snippet,contentDetails,statistics",
-        id=video_id
-    ).execute()
+    try:
+        video_response = youtube.videos().list(
+            part="snippet,contentDetails,statistics",
+            id=video_id
+        ).execute()
 
-    for video in video_response['items']:
-        duration = video['contentDetails'].get('duration', 'PT0S')
-        try:
-            duration_seconds = isodate.parse_duration(duration).total_seconds()
-        except isodate.ISO8601Error:
-            duration_seconds = 0
+        for video in video_response['items']:
+            duration = video['contentDetails'].get('duration', 'PT0S')
+            try:
+                duration_seconds = isodate.parse_duration(duration).total_seconds()
+            except isodate.ISO8601Error:
+                duration_seconds = 0
 
-        subtitles = get_video_subtitles(video_id)
-        if subtitles:
-            print(f"Retrieved subtitles for video: {video['snippet']['title']}")
-        else:
-            print(f"No subtitles available for video: {video['snippet']['title']}")
+            subtitles = get_video_subtitles(video_id)
+            if subtitles:
+                logging.info(f"Retrieved subtitles for video: {video['snippet']['title']}")
+            else:
+                logging.warning(f"No subtitles available for video: {video['snippet']['title']}")
+                return None  # Return None if subtitles are not available
 
-        video_data = {
-            'title': video['snippet']['title'],
-            'description': video['snippet']['description'],
-            'length': int(duration_seconds),
-            'date_published': video['snippet']['publishedAt'],
-            'tags': video['snippet'].get('tags', []),
-            'youtube_video_id': video['id'],
-            'youtube_category_id': video['snippet'].get('categoryId', 'Unknown'),
-            'views': int(video['statistics'].get('viewCount', 0)),
-            'like_count': int(video['statistics'].get('likeCount', 0)),
-            'comment_count': int(video['statistics'].get('commentCount', 0)),
-            'thumbnail_url': video['snippet']['thumbnails']['default']['url'],
-            'channel_title': video['snippet']['channelTitle'],
-            'subtitles': subtitles
-        }
+            video_data = {
+                'title': video['snippet']['title'],
+                'description': video['snippet']['description'],
+                'length': int(duration_seconds),
+                'date_published': video['snippet']['publishedAt'],
+                'tags': video['snippet'].get('tags', []),
+                'youtube_video_id': video['id'],
+                'youtube_category_id': video['snippet'].get('categoryId', 'Unknown'),
+                'views': int(video['statistics'].get('viewCount', 0)),
+                'like_count': int(video['statistics'].get('likeCount', 0)),
+                'comment_count': int(video['statistics'].get('commentCount', 0)),
+                'thumbnail_url': video['snippet']['thumbnails']['default']['url'],
+                'channel_title': video['snippet']['channelTitle'],
+                'subtitles': subtitles
+            }
 
-        if include_comments:
-            video_data['top_comments'] = get_video_comments(video_id)
+            if include_comments:
+                video_data['top_comments'] = get_video_comments(video_id)
 
-        output.append(video_data)
+            output.append(video_data)
 
-    return output
+        return output
+
+    except Exception as e:
+        logging.error(f"Error in get_video_data for video {video_id}: {str(e)}")
+        return None
 
 def get_video_comments(video_id, max_results=100):
     comments = []
@@ -242,21 +249,29 @@ def get_video_subtitles(video_id):
     Fetch the subtitle file for a given video ID without authentication.
     Returns the subtitles as a string with only the text content, if found, None otherwise.
     """
+    logging.info(f"Attempting to fetch subtitles for video ID: {video_id}")
     try:
-        # First, we need to get the available caption tracks
+        # Set a more browser-like User-Agent
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        
         url = f'https://youtube.com/watch?v={video_id}'
-        response = requests.get(url)
+        response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
+        
+        logging.debug(f"Successfully fetched video page for {video_id}")
         
         # Extract the caption track URL from the video page
         captions_regex = r'"captions":.*?"captionTracks":(\[.*?\])'
         captions_match = re.search(captions_regex, response.text)
         
         if not captions_match:
-            print("DEBUG: No caption tracks found in the video page")
+            logging.warning(f"No caption tracks found in the video page for {video_id}")
             return None
         
         captions_data = json.loads(captions_match.group(1))
+        logging.debug(f"Caption data extracted: {captions_data}")
         
         # Find the English auto-generated captions
         subtitle_url = None
@@ -266,18 +281,20 @@ def get_video_subtitles(video_id):
                 break
         
         if not subtitle_url:
-            print("DEBUG: No English auto-generated captions found")
+            logging.warning(f"No English auto-generated captions found for {video_id}")
             return None
         
+        logging.info(f"Fetching subtitle content from {subtitle_url}")
+        
         # Fetch the actual subtitle content
-        subtitle_response = requests.get(subtitle_url)
+        subtitle_response = requests.get(subtitle_url, headers=headers, timeout=10)
         subtitle_response.raise_for_status()
 
-       # Parse the XML content
+        # Parse the XML content
         try:
             root = ET.fromstring(subtitle_response.text)
         except ET.ParseError as e:
-            print(f"DEBUG: Error parsing XML: {e}")
+            logging.error(f"Error parsing XML for {video_id}: {e}")
             return None
         
         # Extract only the text content of the subtitles
@@ -288,11 +305,18 @@ def get_video_subtitles(video_id):
                 subtitles.append(content)
         
         # Join all subtitle texts into a single string
-        return ' '.join(subtitles)
+        subtitle_text = ' '.join(subtitles)
+        logging.info(f"Successfully extracted subtitles for {video_id}")
+        return subtitle_text
 
     except requests.RequestException as e:
-        print(f"DEBUG: An error occurred while fetching subtitles: {e}")
-        return None
+        logging.error(f"Request error while fetching subtitles for {video_id}: {e}")
+    except json.JSONDecodeError as e:
+        logging.error(f"JSON decode error for {video_id}: {e}")
+    except Exception as e:
+        logging.error(f"Unexpected error while fetching subtitles for {video_id}: {e}")
+    
+    return None
 
 def save_json_to_file(data, channel_id):
     if not os.path.exists('reports'):
