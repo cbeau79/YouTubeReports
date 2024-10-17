@@ -638,7 +638,7 @@ def summarize_video():
     return Response(stream_with_context(generate()), content_type='application/json')
 
 # Run the app (dev mode only)
-# if __name__ == '__main__':
-#    with app.app_context():
-#        db.create_all()  # Create database tables before running the app
-#    app.run(host='0.0.0.0', port=5000, debug=True)  # Run in debug mode for development
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()  # Create database tables before running the app
+    app.run(host='0.0.0.0', port=5000, debug=True)  # Run in debug mode for development
