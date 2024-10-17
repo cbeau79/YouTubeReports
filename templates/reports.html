@@ -347,6 +347,15 @@
                     <div>
                         ${displaySummarySection('Engagement Analysis', `<p class="report-text">${summary.engagement_analysis}</p>`)}
                         ${displaySummarySection('Target Audience', `<p class="report-text">${summary.target_audience}</p>`)}
+                        ${displaySummarySection('Discourse', `<p class="report-text mb-2">${summary.discourse_summary}</p>
+                            <ul class="list-disc pl-5 report-text">
+                                ${summary.discourse_themes.map(theme => `
+                                    <li class="mb-2">
+                                        <strong>${theme.theme_title}</strong>: ${theme.theme_description}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        `)}
                         ${displaySummarySection('Improvement Suggestions', `
                             <ul class="list-disc pl-5 report-text">
                                 ${summary.improvement_suggestions.map(suggestion => `

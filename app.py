@@ -1,11 +1,12 @@
 # Import necessary modules
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, Response, stream_with_context, send_from_directory
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, Response, stream_with_context, send_from_directory, current_app
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from flask_mail import Mail, Message
+from sqlalchemy.exc import SQLAlchemyError
 import os
 import json
 from datetime import datetime, timedelta
@@ -173,6 +174,43 @@ def save_json_to_file(data, channel_id):
     
     print(f"Channel data saved to {filename}")
     return filename
+
+def seed_user_account(user_id):
+    # List of pre-selected channel IDs and video IDs for seeding
+    sample_channel_ids = ['', '', '']
+    sample_video_ids = ['', '', '']
+
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            current_app.logger.error(f"User with ID {user_id} not found")
+            return False
+
+        # Seed channel reports
+        for channel_id in sample_channel_ids:
+            report = ChannelReport.query.filter_by(channel_id=channel_id).first()
+            if report:
+                access = UserReportAccess(user_id=user.id, report_id=report.id)
+                db.session.add(access)
+
+        # Seed video summaries
+        for video_id in sample_video_ids:
+            summary = VideoSummary.query.filter_by(video_id=video_id).first()
+            if summary:
+                access = UserVideoAccess(user_id=user.id, summary_id=summary.id)
+                db.session.add(access)
+
+        db.session.commit()
+        current_app.logger.info(f"Successfully seeded account for user {user_id}")
+        return True
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        current_app.logger.error(f"Database error seeding account for user {user_id}: {str(e)}")
+        return False
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Unexpected error seeding account for user {user_id}: {str(e)}")
+        return False
 
 # Routes
 @app.route('/images/<path:filename>')
