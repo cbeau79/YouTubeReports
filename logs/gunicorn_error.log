@@ -1233,3 +1233,656 @@ Retrieved subtitles for video: Stop The Knee Shield With The Shin Slide
 [2024-10-16 06:55:15 -0700] [39730] [ERROR] Worker (pid:39746) exited with code 1.
 [2024-10-16 06:55:15 -0700] [40021] [INFO] Booting worker with pid: 40021
 [2024-10-16 06:55:15 -0700] [40021] [INFO] Worker initialized
+[2024-10-16 08:59:48 -0700] [39730] [ERROR] Worker (pid:39743) was sent SIGHUP!
+[2024-10-16 08:59:48 -0700] [39730] [ERROR] Worker (pid:39742) was sent SIGHUP!
+[2024-10-16 08:59:48 -0700] [39730] [ERROR] Worker (pid:39741) was sent SIGHUP!
+[2024-10-16 08:59:48 -0700] [39730] [ERROR] Worker (pid:39740) was sent SIGHUP!
+[2024-10-16 08:59:48 -0700] [39730] [ERROR] Worker (pid:39739) was sent SIGHUP!
+[2024-10-16 08:59:48 -0700] [39730] [ERROR] Worker (pid:39738) was sent SIGHUP!
+[2024-10-16 08:59:48 -0700] [39730] [ERROR] Worker (pid:39737) was sent SIGHUP!
+[2024-10-16 08:59:48 -0700] [39730] [ERROR] Worker (pid:39736) was sent SIGHUP!
+--- Logging error ---
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1164, in emit
+    self.flush()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1144, in flush
+    self.stream.flush()
+RuntimeError: reentrant call inside <_io.BufferedWriter name='/Users/chrisbeaumont/Projects/YouTubeReports/logs/gunicorn_error.log'>
+Call stack:
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/bin/gunicorn", line 8, in <module>
+    sys.exit(run())
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/wsgiapp.py", line 67, in run
+    WSGIApplication("%(prog)s [OPTIONS] [APP_MODULE]").run()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/base.py", line 236, in run
+    super().run()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/base.py", line 72, in run
+    Arbiter(self).run()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 209, in run
+    self.sleep()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 360, in sleep
+    ready = select.select([self.PIPE[0]], [], [], 1.0)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 191, in signal
+    def signal(self, sig, frame):
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 548, in reap_workers
+    msg = "Worker (pid:{}) was sent {}!".format(
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 271, in error
+    def error(self, msg, *args, **kwargs):
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 272, in error
+    self.error_log.error(msg, *args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1568, in error
+    self._log(ERROR, msg, args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1672, in _log
+    fn, lno, func, sinfo = self.findCaller(stack_info, stacklevel)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1616, in findCaller
+    f = currentframe()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 170, in <lambda>
+    currentframe = lambda: sys._getframe(1)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 272, in error
+    self.error_log.error(msg, *args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1568, in error
+    self._log(ERROR, msg, args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1672, in _log
+    fn, lno, func, sinfo = self.findCaller(stack_info, stacklevel)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1616, in findCaller
+    f = currentframe()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 170, in <lambda>
+    currentframe = lambda: sys._getframe(1)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 272, in error
+    self.error_log.error(msg, *args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1568, in error
+    self._log(ERROR, msg, args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1684, in _log
+    self.handle(record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1700, in handle
+    self.callHandlers(record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1762, in callHandlers
+    hdlr.handle(record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1028, in handle
+    self.emit(record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1280, in emit
+    StreamHandler.emit(self, record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1164, in emit
+    self.flush()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1144, in flush
+    self.stream.flush()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 272, in error
+    self.error_log.error(msg, *args, **kwargs)
+Message: 'Worker (pid:39735) was sent SIGHUP!'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1164, in emit
+    self.flush()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1144, in flush
+    self.stream.flush()
+RuntimeError: reentrant call inside <_io.BufferedWriter name='/Users/chrisbeaumont/Projects/YouTubeReports/logs/gunicorn_error.log'>
+Call stack:
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/bin/gunicorn", line 8, in <module>
+    sys.exit(run())
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/wsgiapp.py", line 67, in run
+    WSGIApplication("%(prog)s [OPTIONS] [APP_MODULE]").run()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/base.py", line 236, in run
+    super().run()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/base.py", line 72, in run
+    Arbiter(self).run()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 209, in run
+    self.sleep()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 360, in sleep
+    ready = select.select([self.PIPE[0]], [], [], 1.0)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 191, in signal
+    def signal(self, sig, frame):
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 548, in reap_workers
+    msg = "Worker (pid:{}) was sent {}!".format(
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 271, in error
+    def error(self, msg, *args, **kwargs):
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 272, in error
+    self.error_log.error(msg, *args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1568, in error
+    self._log(ERROR, msg, args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1672, in _log
+    fn, lno, func, sinfo = self.findCaller(stack_info, stacklevel)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1616, in findCaller
+    f = currentframe()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 170, in <lambda>
+    currentframe = lambda: sys._getframe(1)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 272, in error
+    self.error_log.error(msg, *args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1568, in error
+    self._log(ERROR, msg, args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1672, in _log
+    fn, lno, func, sinfo = self.findCaller(stack_info, stacklevel)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1616, in findCaller
+    f = currentframe()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 170, in <lambda>
+    currentframe = lambda: sys._getframe(1)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 272, in error
+    self.error_log.error(msg, *args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1568, in error
+    self._log(ERROR, msg, args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1684, in _log
+    self.handle(record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1700, in handle
+    self.callHandlers(record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1762, in callHandlers
+    hdlr.handle(record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1028, in handle
+    self.emit(record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1280, in emit
+    StreamHandler.emit(self, record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1164, in emit
+    self.flush()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1144, in flush
+    self.stream.flush()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 272, in error
+    self.error_log.error(msg, *args, **kwargs)
+Message: 'Worker (pid:39734) was sent SIGHUP!'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1164, in emit
+    self.flush()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1144, in flush
+    self.stream.flush()
+RuntimeError: reentrant call inside <_io.BufferedWriter name='/Users/chrisbeaumont/Projects/YouTubeReports/logs/gunicorn_error.log'>
+Call stack:
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/bin/gunicorn", line 8, in <module>
+    sys.exit(run())
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/wsgiapp.py", line 67, in run
+    WSGIApplication("%(prog)s [OPTIONS] [APP_MODULE]").run()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/base.py", line 236, in run
+    super().run()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/base.py", line 72, in run
+    Arbiter(self).run()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 209, in run
+    self.sleep()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 360, in sleep
+    ready = select.select([self.PIPE[0]], [], [], 1.0)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 191, in signal
+    def signal(self, sig, frame):
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 548, in reap_workers
+    msg = "Worker (pid:{}) was sent {}!".format(
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 271, in error
+    def error(self, msg, *args, **kwargs):
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 272, in error
+    self.error_log.error(msg, *args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1568, in error
+    self._log(ERROR, msg, args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1672, in _log
+    fn, lno, func, sinfo = self.findCaller(stack_info, stacklevel)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1616, in findCaller
+    f = currentframe()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 170, in <lambda>
+    currentframe = lambda: sys._getframe(1)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 272, in error
+    self.error_log.error(msg, *args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1568, in error
+    self._log(ERROR, msg, args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1672, in _log
+    fn, lno, func, sinfo = self.findCaller(stack_info, stacklevel)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1616, in findCaller
+    f = currentframe()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 170, in <lambda>
+    currentframe = lambda: sys._getframe(1)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 272, in error
+    self.error_log.error(msg, *args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1568, in error
+    self._log(ERROR, msg, args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1684, in _log
+    self.handle(record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1700, in handle
+    self.callHandlers(record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1762, in callHandlers
+    hdlr.handle(record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1028, in handle
+    self.emit(record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1280, in emit
+    StreamHandler.emit(self, record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1164, in emit
+    self.flush()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1144, in flush
+    self.stream.flush()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 272, in error
+    self.error_log.error(msg, *args, **kwargs)
+Message: 'Worker (pid:39733) was sent SIGHUP!'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1164, in emit
+    self.flush()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1144, in flush
+    self.stream.flush()
+RuntimeError: reentrant call inside <_io.BufferedWriter name='/Users/chrisbeaumont/Projects/YouTubeReports/logs/gunicorn_error.log'>
+Call stack:
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/bin/gunicorn", line 8, in <module>
+    sys.exit(run())
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/wsgiapp.py", line 67, in run
+    WSGIApplication("%(prog)s [OPTIONS] [APP_MODULE]").run()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/base.py", line 236, in run
+    super().run()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/base.py", line 72, in run
+    Arbiter(self).run()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 209, in run
+    self.sleep()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 360, in sleep
+    ready = select.select([self.PIPE[0]], [], [], 1.0)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 191, in signal
+    def signal(self, sig, frame):
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 548, in reap_workers
+    msg = "Worker (pid:{}) was sent {}!".format(
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 271, in error
+    def error(self, msg, *args, **kwargs):
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 272, in error
+    self.error_log.error(msg, *args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1568, in error
+    self._log(ERROR, msg, args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1672, in _log
+    fn, lno, func, sinfo = self.findCaller(stack_info, stacklevel)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1616, in findCaller
+    f = currentframe()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 170, in <lambda>
+    currentframe = lambda: sys._getframe(1)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 272, in error
+    self.error_log.error(msg, *args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1568, in error
+    self._log(ERROR, msg, args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1672, in _log
+    fn, lno, func, sinfo = self.findCaller(stack_info, stacklevel)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1616, in findCaller
+    f = currentframe()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 170, in <lambda>
+    currentframe = lambda: sys._getframe(1)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 272, in error
+    self.error_log.error(msg, *args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1568, in error
+    self._log(ERROR, msg, args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1684, in _log
+    self.handle(record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1700, in handle
+    self.callHandlers(record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1762, in callHandlers
+    hdlr.handle(record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1028, in handle
+    self.emit(record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1280, in emit
+    StreamHandler.emit(self, record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1164, in emit
+    self.flush()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1144, in flush
+    self.stream.flush()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 272, in error
+    self.error_log.error(msg, *args, **kwargs)
+Message: 'Worker (pid:39732) was sent SIGHUP!'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1164, in emit
+    self.flush()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1144, in flush
+    self.stream.flush()
+RuntimeError: reentrant call inside <_io.BufferedWriter name='/Users/chrisbeaumont/Projects/YouTubeReports/logs/gunicorn_error.log'>
+Call stack:
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/bin/gunicorn", line 8, in <module>
+    sys.exit(run())
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/wsgiapp.py", line 67, in run
+    WSGIApplication("%(prog)s [OPTIONS] [APP_MODULE]").run()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/base.py", line 236, in run
+    super().run()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/app/base.py", line 72, in run
+    Arbiter(self).run()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 209, in run
+    self.sleep()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 360, in sleep
+    ready = select.select([self.PIPE[0]], [], [], 1.0)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 191, in signal
+    def signal(self, sig, frame):
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 548, in reap_workers
+    msg = "Worker (pid:{}) was sent {}!".format(
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 271, in error
+    def error(self, msg, *args, **kwargs):
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 272, in error
+    self.error_log.error(msg, *args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1568, in error
+    self._log(ERROR, msg, args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1672, in _log
+    fn, lno, func, sinfo = self.findCaller(stack_info, stacklevel)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1616, in findCaller
+    f = currentframe()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 170, in <lambda>
+    currentframe = lambda: sys._getframe(1)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 272, in error
+    self.error_log.error(msg, *args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1568, in error
+    self._log(ERROR, msg, args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1672, in _log
+    fn, lno, func, sinfo = self.findCaller(stack_info, stacklevel)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1616, in findCaller
+    f = currentframe()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 170, in <lambda>
+    currentframe = lambda: sys._getframe(1)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 272, in error
+    self.error_log.error(msg, *args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1568, in error
+    self._log(ERROR, msg, args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1684, in _log
+    self.handle(record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1700, in handle
+    self.callHandlers(record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1762, in callHandlers
+    hdlr.handle(record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1028, in handle
+    self.emit(record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1280, in emit
+    StreamHandler.emit(self, record)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1164, in emit
+    self.flush()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py", line 1144, in flush
+    self.stream.flush()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 242, in handle_chld
+    self.reap_workers()
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/arbiter.py", line 554, in reap_workers
+    self.log.error(msg)
+  File "/Users/chrisbeaumont/Projects/youtube_reports_env/lib/python3.12/site-packages/gunicorn/glogging.py", line 272, in error
+    self.error_log.error(msg, *args, **kwargs)
+Message: 'Worker (pid:39731) was sent SIGHUP!'
+Arguments: ()
+[2024-10-16 08:59:48 -0700] [39730] [ERROR] Worker (pid:39744) was sent SIGHUP!
+[2024-10-16 08:59:48 -0700] [39730] [ERROR] Worker (pid:39745) was sent SIGHUP!
+[2024-10-16 08:59:48 -0700] [39730] [ERROR] Worker (pid:39747) was sent SIGHUP!
+[2024-10-16 08:59:48 -0700] [39730] [ERROR] Worker (pid:40021) was sent SIGHUP!
+[2024-10-16 08:59:48 -0700] [40752] [INFO] Booting worker with pid: 40752
+[2024-10-16 08:59:48 -0700] [40752] [INFO] Worker initialized
+[2024-10-16 08:59:48 -0700] [40753] [INFO] Booting worker with pid: 40753
+[2024-10-16 08:59:48 -0700] [40753] [INFO] Worker initialized
+[2024-10-16 08:59:48 -0700] [40754] [INFO] Booting worker with pid: 40754
+[2024-10-16 08:59:48 -0700] [40754] [INFO] Worker initialized
+[2024-10-16 08:59:48 -0700] [40755] [INFO] Booting worker with pid: 40755
+[2024-10-16 08:59:48 -0700] [40755] [INFO] Worker initialized
+[2024-10-16 08:59:48 -0700] [40756] [INFO] Booting worker with pid: 40756
+[2024-10-16 08:59:48 -0700] [40756] [INFO] Worker initialized
+[2024-10-16 08:59:48 -0700] [40757] [INFO] Booting worker with pid: 40757
+[2024-10-16 08:59:48 -0700] [40757] [INFO] Worker initialized
+[2024-10-16 08:59:48 -0700] [40758] [INFO] Booting worker with pid: 40758
+[2024-10-16 08:59:48 -0700] [40758] [INFO] Worker initialized
+[2024-10-16 08:59:48 -0700] [40759] [INFO] Booting worker with pid: 40759
+[2024-10-16 08:59:48 -0700] [40759] [INFO] Worker initialized
+[2024-10-16 08:59:48 -0700] [40760] [INFO] Booting worker with pid: 40760
+[2024-10-16 08:59:48 -0700] [40760] [INFO] Worker initialized
+[2024-10-16 08:59:48 -0700] [40761] [INFO] Booting worker with pid: 40761
+[2024-10-16 08:59:49 -0700] [40761] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40762] [INFO] Booting worker with pid: 40762
+[2024-10-16 08:59:49 -0700] [40762] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40763] [INFO] Booting worker with pid: 40763
+[2024-10-16 08:59:49 -0700] [40763] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40764] [INFO] Booting worker with pid: 40764
+[2024-10-16 08:59:49 -0700] [40764] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40765] [INFO] Booting worker with pid: 40765
+[2024-10-16 08:59:49 -0700] [40765] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40766] [INFO] Booting worker with pid: 40766
+[2024-10-16 08:59:49 -0700] [40766] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40767] [INFO] Booting worker with pid: 40767
+[2024-10-16 08:59:49 -0700] [40767] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40768] [INFO] Booting worker with pid: 40768
+[2024-10-16 08:59:49 -0700] [40768] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [39730] [INFO] Handling signal: hup
+[2024-10-16 08:59:49 -0700] [39730] [INFO] Hang up: Master
+[2024-10-16 08:59:49 -0700] [39730] [DEBUG] Current configuration:
+  config: gunicorn.conf.py
+  wsgi_app: None
+  bind: ['0.0.0.0:8000']
+  backlog: 2048
+  workers: 17
+  worker_class: sync
+  threads: 1
+  worker_connections: 1000
+  max_requests: 1000
+  max_requests_jitter: 50
+  timeout: 120
+  graceful_timeout: 30
+  keepalive: 2
+  limit_request_line: 4094
+  limit_request_fields: 100
+  limit_request_field_size: 8190
+  reload: True
+  reload_engine: auto
+  reload_extra_files: []
+  spew: False
+  check_config: False
+  print_config: False
+  preload_app: True
+  sendfile: None
+  reuse_port: False
+  chdir: /Users/chrisbeaumont/Projects/YouTubeReports
+  daemon: False
+  raw_env: []
+  pidfile: None
+  worker_tmp_dir: None
+  user: 501
+  group: 20
+  umask: 0
+  initgroups: False
+  tmp_upload_dir: None
+  secure_scheme_headers: {'X-FORWARDED-PROTOCOL': 'ssl', 'X-FORWARDED-PROTO': 'https', 'X-FORWARDED-SSL': 'on'}
+  forwarded_allow_ips: ['127.0.0.1']
+  accesslog: /Users/chrisbeaumont/Projects/YouTubeReports/logs/gunicorn_access.log
+  disable_redirect_access_to_syslog: False
+  access_log_format: %(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"
+  errorlog: /Users/chrisbeaumont/Projects/YouTubeReports/logs/gunicorn_error.log
+  loglevel: debug
+  capture_output: True
+  logger_class: gunicorn.glogging.Logger
+  logconfig: None
+  logconfig_dict: {}
+  logconfig_json: None
+  syslog_addr: unix:///var/run/syslog
+  syslog: False
+  syslog_prefix: None
+  syslog_facility: user
+  enable_stdio_inheritance: True
+  statsd_host: None
+  dogstatsd_tags: 
+  statsd_prefix: 
+  proc_name: lumina
+  default_proc_name: app:app
+  pythonpath: None
+  paste: None
+  on_starting: <function on_starting at 0x100f9ee80>
+  on_reload: <function OnReload.on_reload at 0x100e9a020>
+  when_ready: <function WhenReady.when_ready at 0x100e9a160>
+  pre_fork: <function Prefork.pre_fork at 0x100e9a340>
+  post_fork: <function Postfork.post_fork at 0x100e9a480>
+  post_worker_init: <function post_worker_init at 0x104fe1c60>
+  worker_int: <function WorkerInt.worker_int at 0x100e9a700>
+  worker_abort: <function WorkerAbort.worker_abort at 0x100e9a840>
+  pre_exec: <function PreExec.pre_exec at 0x100e9a980>
+  pre_request: <function PreRequest.pre_request at 0x100e9aac0>
+  post_request: <function PostRequest.post_request at 0x100e9ab60>
+  child_exit: <function ChildExit.child_exit at 0x100e9aca0>
+  worker_exit: <function WorkerExit.worker_exit at 0x100e9ade0>
+  nworkers_changed: <function NumWorkersChanged.nworkers_changed at 0x100e9af20>
+  on_exit: <function on_exit at 0x100f9f1a0>
+  ssl_context: <function NewSSLContext.ssl_context at 0x100e9b240>
+  proxy_protocol: False
+  proxy_allow_ips: ['127.0.0.1']
+  keyfile: None
+  certfile: None
+  ssl_version: 2
+  cert_reqs: 0
+  ca_certs: None
+  suppress_ragged_eofs: True
+  do_handshake_on_connect: False
+  ciphers: None
+  raw_paste_global_conf: []
+  strip_header_spaces: False
+[2024-10-16 08:59:49 -0700] [40769] [INFO] Booting worker with pid: 40769
+[2024-10-16 08:59:49 -0700] [40770] [INFO] Booting worker with pid: 40770
+[2024-10-16 08:59:49 -0700] [40771] [INFO] Booting worker with pid: 40771
+[2024-10-16 08:59:49 -0700] [40772] [INFO] Booting worker with pid: 40772
+[2024-10-16 08:59:49 -0700] [40773] [INFO] Booting worker with pid: 40773
+[2024-10-16 08:59:49 -0700] [40774] [INFO] Booting worker with pid: 40774
+[2024-10-16 08:59:49 -0700] [40769] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40775] [INFO] Booting worker with pid: 40775
+[2024-10-16 08:59:49 -0700] [40770] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40776] [INFO] Booting worker with pid: 40776
+[2024-10-16 08:59:49 -0700] [40771] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40772] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40777] [INFO] Booting worker with pid: 40777
+[2024-10-16 08:59:49 -0700] [40778] [INFO] Booting worker with pid: 40778
+[2024-10-16 08:59:49 -0700] [40779] [INFO] Booting worker with pid: 40779
+[2024-10-16 08:59:49 -0700] [40773] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40780] [INFO] Booting worker with pid: 40780
+[2024-10-16 08:59:49 -0700] [40774] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40781] [INFO] Booting worker with pid: 40781
+[2024-10-16 08:59:49 -0700] [40782] [INFO] Booting worker with pid: 40782
+[2024-10-16 08:59:49 -0700] [40783] [INFO] Booting worker with pid: 40783
+[2024-10-16 08:59:49 -0700] [40785] [INFO] Booting worker with pid: 40785
+[2024-10-16 08:59:49 -0700] [40776] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40753] [INFO] Worker exiting (pid: 40753)
+[2024-10-16 08:59:49 -0700] [40754] [INFO] Worker exiting (pid: 40754)
+[2024-10-16 08:59:49 -0700] [40757] [INFO] Worker exiting (pid: 40757)
+[2024-10-16 08:59:49 -0700] [40758] [INFO] Worker exiting (pid: 40758)
+[2024-10-16 08:59:49 -0700] [40756] [INFO] Worker exiting (pid: 40756)
+[2024-10-16 08:59:49 -0700] [40760] [INFO] Worker exiting (pid: 40760)
+[2024-10-16 08:59:49 -0700] [40759] [INFO] Worker exiting (pid: 40759)
+[2024-10-16 08:59:49 -0700] [40761] [INFO] Worker exiting (pid: 40761)
+[2024-10-16 08:59:49 -0700] [40762] [INFO] Worker exiting (pid: 40762)
+[2024-10-16 08:59:49 -0700] [40763] [INFO] Worker exiting (pid: 40763)
+[2024-10-16 08:59:49 -0700] [40764] [INFO] Worker exiting (pid: 40764)
+[2024-10-16 08:59:49 -0700] [40765] [INFO] Worker exiting (pid: 40765)
+[2024-10-16 08:59:49 -0700] [40766] [INFO] Worker exiting (pid: 40766)
+[2024-10-16 08:59:49 -0700] [40778] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40755] [INFO] Worker exiting (pid: 40755)
+[2024-10-16 08:59:49 -0700] [40780] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40752] [INFO] Worker exiting (pid: 40752)
+[2024-10-16 08:59:49 -0700] [40777] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40779] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40768] [INFO] Worker exiting (pid: 40768)
+[2024-10-16 08:59:49 -0700] [40784] [INFO] Booting worker with pid: 40784
+[2024-10-16 08:59:49 -0700] [40775] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40767] [INFO] Worker exiting (pid: 40767)
+[2024-10-16 08:59:49 -0700] [40781] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40784] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40782] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40783] [INFO] Worker initialized
+[2024-10-16 08:59:49 -0700] [40785] [INFO] Worker initialized
+[2024-10-16 08:59:50 -0700] [39730] [ERROR] Worker (pid:40768) was sent SIGTERM!
+[2024-10-16 08:59:50 -0700] [39730] [ERROR] Worker (pid:40759) was sent SIGTERM!
+[2024-10-16 08:59:50 -0700] [39730] [ERROR] Worker (pid:40758) was sent SIGTERM!
+[2024-10-16 08:59:50 -0700] [39730] [ERROR] Worker (pid:40757) was sent SIGTERM!
+[2024-10-16 08:59:50 -0700] [39730] [ERROR] Worker (pid:40756) was sent SIGTERM!
+[2024-10-16 08:59:50 -0700] [39730] [ERROR] Worker (pid:40755) was sent SIGTERM!
+[2024-10-16 08:59:50 -0700] [39730] [ERROR] Worker (pid:40754) was sent SIGTERM!
+[2024-10-16 08:59:50 -0700] [39730] [ERROR] Worker (pid:40753) was sent SIGTERM!
+[2024-10-16 08:59:50 -0700] [39730] [ERROR] Worker (pid:40752) was sent SIGTERM!
+[2024-10-16 08:59:50 -0700] [39730] [ERROR] Worker (pid:40767) was sent SIGTERM!
+[2024-10-16 08:59:50 -0700] [39730] [ERROR] Worker (pid:40763) was sent SIGTERM!
+[2024-10-16 08:59:50 -0700] [39730] [ERROR] Worker (pid:40760) was sent SIGTERM!
+[2024-10-16 08:59:50 -0700] [39730] [ERROR] Worker (pid:40761) was sent SIGTERM!
+[2024-10-16 08:59:50 -0700] [39730] [ERROR] Worker (pid:40765) was sent SIGTERM!
+[2024-10-16 08:59:50 -0700] [39730] [ERROR] Worker (pid:40766) was sent SIGTERM!
+[2024-10-16 08:59:50 -0700] [39730] [ERROR] Worker (pid:40762) was sent SIGTERM!
