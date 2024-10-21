@@ -11,23 +11,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 from config import Config
 import logging
-
-## DEPRECATED CONFIG SYSTEM
-'''
-def load_config():
-    try:
-        with open('config.json', 'r') as config_file:
-            return json.load(config_file)
-    except FileNotFoundError:
-        print("Configuration file 'config.json' not found. Please create it and add your settings.")
-        exit(1)
-    except json.JSONDecodeError:
-        print("Error parsing 'config.json'. Please make sure it's valid JSON.")
-        exit(1)
-
-# Load configuration
-app_config = load_config()
-'''
+import yt_dlp
 
 # Use configuration values
 API_KEY = Config.YOUTUBE_API_KEY # os.environ.get('YOUTUBE_API_KEY')
@@ -36,6 +20,8 @@ MAX_VIDEOS = Config.MAX_VIDEOS_TO_FETCH # app_config['max_videos_to_fetch']
 MAX_VIDEOS_FOR_SUBTITLES = Config.MAX_VIDEOS_FOR_SUBTITLES # app_config['max_videos_for_subtitles']
 OPENAI_MODEL = Config.OPENAI_MODEL # app_config['openai_model']
 MAX_TOKENS = Config.MAX_TOKENS # app_config['max_tokens']
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Initialize YouTube API client
 youtube = googleapiclient.discovery.build("youtube", "v3", developerKey=API_KEY)
@@ -244,77 +230,84 @@ def get_channel_videos(channel_id, max_results):
 
     return videos[:max_results]
 
+def get_yt_dlp_opts():
+    return {
+        'nocheckcertificate': True,
+        'no_warnings': True,
+        'ignoreerrors': False,
+        'quiet': True,
+        'no_color': True,
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'referer': 'https://www.youtube.com/',
+        'cookiefile': 'youtube_cookies.txt'  # Make sure this file exists and has valid cookies
+    }
+
 def get_video_subtitles(video_id):
     """
-    Fetch the subtitle file for a given video ID without authentication.
+    Fetch the subtitle file for a given video ID using yt-dlp.
+    Attempts to get manual subtitles first, then falls back to automatic captions.
     Returns the subtitles as a string with only the text content, if found, None otherwise.
     """
-    logging.info(f"Attempting to fetch subtitles for video ID: {video_id}")
-    try:
-        # Set a more browser-like User-Agent
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-        
-        url = f'https://youtube.com/watch?v={video_id}'
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()
-        
-        logging.debug(f"Successfully fetched video page for {video_id}")
-        
-        # Extract the caption track URL from the video page
-        captions_regex = r'"captions":.*?"captionTracks":(\[.*?\])'
-        captions_match = re.search(captions_regex, response.text)
-        
-        if not captions_match:
-            logging.warning(f"No caption tracks found in the video page for {video_id}")
-            return None
-        
-        captions_data = json.loads(captions_match.group(1))
-        logging.debug(f"Caption data extracted: {captions_data}")
-        
-        # Find the English auto-generated captions
-        subtitle_url = None
-        for caption in captions_data:
-            if caption.get('vssId', '').endswith('.en'):
-                subtitle_url = caption['baseUrl']
-                break
-        
-        if not subtitle_url:
-            logging.warning(f"No English auto-generated captions found for {video_id}")
-            return None
-        
-        logging.info(f"Fetching subtitle content from {subtitle_url}")
-        
-        # Fetch the actual subtitle content
-        subtitle_response = requests.get(subtitle_url, headers=headers, timeout=10)
-        subtitle_response.raise_for_status()
-
-        # Parse the XML content
+    video_url = f'https://www.youtube.com/watch?v={video_id}'
+    ydl_opts = get_yt_dlp_opts()
+    ydl_opts.update({
+        'skip_download': True,
+        'writesubtitles': True,
+        'writeautomaticsub': True,
+        'subtitleslangs': ['en', 'en-US'],  # Try both 'en' and 'en-US'
+        'subtitlesformat': 'vtt',  # Prefer VTT format
+        'outtmpl': '%(id)s.%(ext)s'
+    })
+    
+    logging.info(f"Attempting to fetch subtitles for video: {video_id}")
+    logging.debug(f"yt-dlp options: {ydl_opts}")
+    
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
-            root = ET.fromstring(subtitle_response.text)
-        except ET.ParseError as e:
-            logging.error(f"Error parsing XML for {video_id}: {e}")
-            return None
-        
-        # Extract only the text content of the subtitles
-        subtitles = []
-        for text in root.findall('.//text'):
-            content = text.text
-            if content:
-                subtitles.append(content)
-        
-        # Join all subtitle texts into a single string
-        subtitle_text = ' '.join(subtitles)
-        logging.info(f"Successfully extracted subtitles for {video_id}")
-        return subtitle_text
-
-    except requests.RequestException as e:
-        logging.error(f"Request error while fetching subtitles for {video_id}: {e}")
-    except json.JSONDecodeError as e:
-        logging.error(f"JSON decode error for {video_id}: {e}")
-    except Exception as e:
-        logging.error(f"Unexpected error while fetching subtitles for {video_id}: {e}")
+            logging.info("Extracting video info...")
+            info = ydl.extract_info(video_url, download=False)
+            logging.debug(f"Video info extracted: {info.keys()}")
+            
+            subtitle_formats = ['.en.vtt', '.en-US.vtt', '.en.ttml', '.en-US.ttml', '.en.srv3', '.en-US.srv3']
+            
+            # Check for manual subtitles
+            if 'subtitles' in info and ('en' in info['subtitles'] or 'en-US' in info['subtitles']):
+                logging.info("Manual English subtitles found. Attempting to download...")
+                ydl.download([video_url])
+            # Check for automatic captions
+            elif 'automatic_captions' in info and ('en' in info['automatic_captions'] or 'en-US' in info['automatic_captions']):
+                logging.info("Automatic English captions found. Attempting to download...")
+                ydl.download([video_url])
+            else:
+                logging.warning(f"No English subtitles or captions available for video: {video_id}")
+                return None
+            
+            # Try to find and read the subtitle file
+            for subtitle_ext in subtitle_formats:
+                subtitle_filename = f"{video_id}{subtitle_ext}"
+                logging.info(f"Looking for subtitle file: {subtitle_filename}")
+                logging.debug(f"Current working directory: {os.getcwd()}")
+                
+                if os.path.exists(subtitle_filename):
+                    logging.info(f"Subtitle file found. Reading content...")
+                    with open(subtitle_filename, 'r', encoding='utf-8') as f:
+                        subtitle_content = f.read()
+                    
+                    logging.debug(f"Subtitle content (first 100 chars): {subtitle_content[:100]}")
+                    
+                    # Extract only the text content
+                    subtitle_text = re.sub(r'WEBVTT\n\n|^\d+:\d+:\d+\.\d+ --> \d+:\d+:\d+\.\d+\n', '', subtitle_content, flags=re.MULTILINE)
+                    subtitle_text = re.sub(r'\n\n', ' ', subtitle_text).strip()
+                    
+                    logging.info("Cleaning up downloaded file...")
+                    os.remove(subtitle_filename)
+                    
+                    logging.info("Subtitles successfully extracted and processed.")
+                    return subtitle_text
+            
+            logging.error(f"No subtitle file found for any of the expected formats.")
+        except Exception as e:
+            logging.exception(f"An error occurred while fetching subtitles for video {video_id}: {str(e)}")
     
     return None
 
@@ -374,3 +367,4 @@ def fetch_channel_data(channel_id):
     except Exception as e:
         print(f"An error occurred while fetching channel data: {e}")
         return None
+    
