@@ -11,7 +11,8 @@ def get_yt_dlp_opts():
         'no_color': True,
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         'referer': 'https://www.youtube.com/',
-        'cookiefile': 'youtube_cookies.txt'  # Path to your cookies file
+        'cookiefile': 'youtube_cookies.txt',
+        'no_cache_dir': True
     }
 
 def list_available_subtitles(video_url):
@@ -50,7 +51,7 @@ def download_subtitles(video_url, language='en'):
             print(f"An error occurred: {str(e)}")
 
 # Replace 'VIDEO_URL' with the actual YouTube video URL
-video_url = 'https://www.youtube.com/watch?v=rkxMdmipYqM'
+video_url = 'https://www.youtube.com/watch?v=ZT9NpPe0wRg'
 
 # List available subtitles
 list_available_subtitles(video_url)
