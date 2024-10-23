@@ -9,8 +9,8 @@ class Config:
     
     # YouTube API configuration
     YOUTUBE_API_KEY = os.environ.get('YOUTUBE_API_KEY')
-    MAX_VIDEOS_TO_FETCH = 100
-    MAX_VIDEOS_FOR_SUBTITLES = 7
+    MAX_VIDEOS_TO_FETCH = 75
+    MAX_VIDEOS_FOR_SUBTITLES = 6
 
     # OpenAI configuration
     OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')

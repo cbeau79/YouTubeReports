@@ -44,7 +44,7 @@ mail = Mail(app)
 def get_local_time():
     return datetime.now(timezone('US/Pacific'))
 
-class User(UserMixin, db.Model):
+'''class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
@@ -59,6 +59,56 @@ class User(UserMixin, db.Model):
 
     def set_password(self, password):
         self.password = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password, password)
+
+    def get_reset_token(self, expires_sec=1800):
+        s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+        return s.dumps({'user_id': self.id}, salt='password-reset-salt')
+
+    @staticmethod
+    def verify_reset_token(token, expires_sec=1800):
+        s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+        try:
+            user_id = s.loads(token, salt='password-reset-salt', max_age=expires_sec)['user_id']
+        except:
+            return None
+        return User.query.get(user_id)
+
+    def get_full_name(self):
+        return f"{self.first_name} {self.last_name}".strip() or self.email
+
+    def delete_account(self):
+        UserReportAccess.query.filter_by(user_id=self.id).delete()
+        UserVideoAccess.query.filter_by(user_id=self.id).delete()
+        db.session.delete(self)
+        db.session.commit()
+
+    @property
+    def username(self):
+        return self.email
+
+    @property
+    def video_summaries(self):
+        return VideoSummary.query.join(UserVideoAccess).filter(UserVideoAccess.user_id == self.id)'''
+
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    first_name = db.Column(db.String(100))
+    last_name = db.Column(db.String(100))
+    report_accesses = db.relationship('UserReportAccess', back_populates='user')
+    video_accesses = db.relationship('UserVideoAccess', back_populates='user')
+
+    def __init__(self, email, password):
+        self.email = email
+        self.set_password(password)
+
+    def set_password(self, password):
+        """Hash password using pbkdf2:sha256 method."""
+        self.password = generate_password_hash(password, method='pbkdf2:sha256')
 
     def check_password(self, password):
         return check_password_hash(self.password, password)

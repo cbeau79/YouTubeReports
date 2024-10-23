@@ -246,71 +246,112 @@ def get_yt_dlp_opts():
 def get_video_subtitles(video_id):
     """
     Fetch the subtitle file for a given video ID using yt-dlp.
-    Attempts to get manual subtitles first, then falls back to automatic captions.
-    Returns the subtitles as a string with only the text content, if found, None otherwise.
+    Returns only the spoken text content without timestamps or metadata.
+    Returns None if no subtitles are available.
     """
     video_url = f'https://www.youtube.com/watch?v={video_id}'
-    ydl_opts = get_yt_dlp_opts()
-    ydl_opts.update({
+    
+    class SubtitleLogger:
+        def debug(self, msg):
+            pass
+        def warning(self, msg):
+            pass
+        def error(self, msg):
+            pass
+    
+    ydl_opts = {
+        'logger': SubtitleLogger(),
         'skip_download': True,
         'writesubtitles': True,
         'writeautomaticsub': True,
-        'subtitleslangs': ['en', 'en-US'],  # Try both 'en' and 'en-US'
-        'subtitlesformat': 'vtt',  # Prefer VTT format
-        'outtmpl': '%(id)s.%(ext)s'
-    })
-    
-    logging.info(f"Attempting to fetch subtitles for video: {video_id}")
-    logging.debug(f"yt-dlp options: {ydl_opts}")
+        'subtitleslangs': ['en', 'en-US'],
+        'extract_flat': True,
+        'quiet': True
+    }
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
-            logging.info("Extracting video info...")
+            # Extract video info including subtitle data
             info = ydl.extract_info(video_url, download=False)
-            logging.debug(f"Video info extracted: {info.keys()}")
             
-            subtitle_formats = ['.en.vtt', '.en-US.vtt', '.en.ttml', '.en-US.ttml', '.en.srv3', '.en-US.srv3']
-            
-            # Check for manual subtitles
+            # Try manual subtitles first, then auto-generated
+            subtitle_info = None
             if 'subtitles' in info and ('en' in info['subtitles'] or 'en-US' in info['subtitles']):
-                logging.info("Manual English subtitles found. Attempting to download...")
-                ydl.download([video_url])
-            # Check for automatic captions
+                subtitle_info = info['subtitles'].get('en') or info['subtitles'].get('en-US')
             elif 'automatic_captions' in info and ('en' in info['automatic_captions'] or 'en-US' in info['automatic_captions']):
-                logging.info("Automatic English captions found. Attempting to download...")
-                ydl.download([video_url])
-            else:
-                logging.warning(f"No English subtitles or captions available for video: {video_id}")
+                subtitle_info = info['automatic_captions'].get('en') or info['automatic_captions'].get('en-US')
+            
+            if not subtitle_info:
                 return None
             
-            # Try to find and read the subtitle file
-            for subtitle_ext in subtitle_formats:
-                subtitle_filename = f"{video_id}{subtitle_ext}"
-                logging.info(f"Looking for subtitle file: {subtitle_filename}")
-                logging.debug(f"Current working directory: {os.getcwd()}")
-                
-                if os.path.exists(subtitle_filename):
-                    logging.info(f"Subtitle file found. Reading content...")
-                    with open(subtitle_filename, 'r', encoding='utf-8') as f:
-                        subtitle_content = f.read()
-                    
-                    logging.debug(f"Subtitle content (first 100 chars): {subtitle_content[:100]}")
-                    
-                    # Extract only the text content
-                    subtitle_text = re.sub(r'WEBVTT\n\n|^\d+:\d+:\d+\.\d+ --> \d+:\d+:\d+\.\d+\n', '', subtitle_content, flags=re.MULTILINE)
-                    subtitle_text = re.sub(r'\n\n', ' ', subtitle_text).strip()
-                    
-                    logging.info("Cleaning up downloaded file...")
-                    os.remove(subtitle_filename)
-                    
-                    logging.info("Subtitles successfully extracted and processed.")
-                    return subtitle_text
+            # Get the VTT format URL if available, otherwise try other formats
+            vtt_url = None
+            for fmt in subtitle_info:
+                if fmt.get('ext') == 'vtt':
+                    vtt_url = fmt['url']
+                    break
             
-            logging.error(f"No subtitle file found for any of the expected formats.")
+            if not vtt_url:
+                return None
+            
+            # Use yt-dlp's downloader to handle the request
+            subtitle_data = ydl.urlopen(vtt_url).read().decode('utf-8')
+            
+            # Parse VTT content to extract just the text
+            # Skip WebVTT header and timing information
+            subtitle_lines = []
+            for line in subtitle_data.split('\n'):
+                # Skip empty lines, timing lines, and WebVTT headers
+                if (line.strip() and 
+                    not line.startswith('WEBVTT') and 
+                    not '-->' in line and 
+                    not line[0].isdigit()):
+                    subtitle_lines.append(line.strip())
+            
+            return ' '.join(subtitle_lines)
+            
         except Exception as e:
-            logging.exception(f"An error occurred while fetching subtitles for video {video_id}: {str(e)}")
+            logging.error(f"Error fetching subtitles for {video_id}: {str(e)}")
+            return None
+
+def clean_subtitle_text(subtitle_content):
+    """
+    Clean subtitle content to extract only the spoken text.
+    Removes all formatting, timestamps, and metadata.
+    """
+    # Remove WEBVTT header and metadata
+    text = re.sub(r'WEBVTT\n.*?\n\n', '', subtitle_content, flags=re.DOTALL)
     
-    return None
+    # Remove timestamps (including arrow and newlines)
+    text = re.sub(r'\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}\n', '', text)
+    
+    # Remove shorter timestamp formats
+    text = re.sub(r'\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}\.\d{3}\n', '', text)
+    
+    # Remove line numbers
+    text = re.sub(r'^\d+\n', '', text, flags=re.MULTILINE)
+    
+    # Remove speaker labels (text in parentheses or brackets at start of lines)
+    text = re.sub(r'^\s*[\[\(].*?[\]\)]\s*', '', text, flags=re.MULTILINE)
+    
+    # Remove HTML-style tags
+    text = re.sub(r'<[^>]+>', '', text)
+    
+    # Remove multiple spaces
+    text = re.sub(r'\s+', ' ', text)
+    
+    # Remove multiple newlines and replace with space
+    text = re.sub(r'\n+', ' ', text)
+    
+    # Remove any remaining timing marks (sometimes found in different formats)
+    text = re.sub(r'\d{2}:\d{2}(?::\d{2})?\s*', '', text)
+    
+    # Clean up any artifacts from removal process
+    text = re.sub(r'\s+[,.]', '.', text)  # Fix spacing around punctuation
+    text = re.sub(r'\s+', ' ', text)      # Remove any double spaces
+    text = text.strip()                    # Remove leading/trailing whitespace
+    
+    return text
 
 def save_json_to_file(data, channel_id):
     if not os.path.exists('reports'):
