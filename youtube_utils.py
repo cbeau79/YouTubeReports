@@ -12,6 +12,10 @@ from datetime import datetime
 from config import Config
 import logging
 import yt_dlp
+from pathlib import Path
+import stat
+import shutil
+import tempfile
 
 # Use configuration values
 API_KEY = Config.YOUTUBE_API_KEY # os.environ.get('YOUTUBE_API_KEY')
@@ -20,6 +24,7 @@ MAX_VIDEOS = Config.MAX_VIDEOS_TO_FETCH # app_config['max_videos_to_fetch']
 MAX_VIDEOS_FOR_SUBTITLES = Config.MAX_VIDEOS_FOR_SUBTITLES # app_config['max_videos_for_subtitles']
 OPENAI_MODEL = Config.OPENAI_MODEL # app_config['openai_model']
 MAX_TOKENS = Config.MAX_TOKENS # app_config['max_tokens']
+COOKIE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "youtube_cookies.txt")
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -96,6 +101,7 @@ def get_video_data(video_id, include_comments=False):
                 duration_seconds = 0
 
             subtitles = get_video_subtitles(video_id)
+
             if subtitles:
                 logging.info(f"Retrieved subtitles for video: {video['snippet']['title']}")
             else:
@@ -230,7 +236,54 @@ def get_channel_videos(channel_id, max_results):
 
     return videos[:max_results]
 
+# ---
+# SUBTITLE FUNCTIONS
+# ---
+
+def create_temp_cookie_file():
+    """Create a temporary copy of the cookie file with appropriate permissions."""
+    if not os.path.exists(COOKIE_FILE):
+        logging.error(f"Original cookie file {COOKIE_FILE} not found")
+        return None
+        
+    try:
+        # Create a temporary file
+        temp_cookie_file = os.path.join(tempfile.gettempdir(), f"yt_cookies_{os.getpid()}.txt")
+        
+        # Copy the original cookie file to the temporary location
+        shutil.copy2(COOKIE_FILE, temp_cookie_file)
+        
+        # Set appropriate permissions on the temporary file
+        os.chmod(temp_cookie_file, stat.S_IRUSR | stat.S_IWUSR)  # Read and write for owner
+        
+        logging.info(f"Created temporary cookie file: {temp_cookie_file}")
+        return temp_cookie_file
+        
+    except Exception as e:
+        logging.error(f"Error creating temporary cookie file: {str(e)}")
+        return None
+
+def cleanup_temp_cookie_file(temp_file):
+    """Clean up the temporary cookie file."""
+    if temp_file and os.path.exists(temp_file):
+        try:
+            # Ensure the file is writable before attempting to delete
+            try:
+                os.chmod(temp_file, stat.S_IRUSR | stat.S_IWUSR)
+            except Exception as e:
+                logging.warning(f"Could not modify permissions for cleanup: {str(e)}")
+                
+            os.remove(temp_file)
+            logging.info(f"Removed temporary cookie file: {temp_file}")
+        except Exception as e:
+            logging.warning(f"Error removing temporary cookie file: {str(e)}")
+
 def get_yt_dlp_opts():
+    """Get yt-dlp options with cookie file configuration."""
+    temp_cookie_file = create_temp_cookie_file()
+    if not temp_cookie_file:
+        return None
+    
     return {
         'nocheckcertificate': True,
         'no_warnings': True,
@@ -239,7 +292,7 @@ def get_yt_dlp_opts():
         'no_color': True,
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         'referer': 'https://www.youtube.com/',
-        'cookiefile': 'youtube_cookies.txt',
+        'cookiefile': temp_cookie_file,
         'no_cache_dir': True
     }
 
@@ -250,62 +303,84 @@ def get_video_subtitles(video_id):
     Returns None if no subtitles are available.
     """
     video_url = f'https://www.youtube.com/watch?v={video_id}'
-    ydl_opts = get_yt_dlp_opts()
-    ydl_opts.update({
-        'skip_download': True,
-        'writesubtitles': True,
-        'writeautomaticsub': True,
-        'subtitleslangs': ['en', 'en-US'],
-        'subtitlesformat': 'vtt',
-        'outtmpl': '%(id)s.%(ext)s'
-    })
-    
-    logging.info(f"Attempting to fetch subtitles for video: {video_id}")
-    logging.debug(f"yt-dlp options: {ydl_opts}")
-    
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        try:
-            logging.info("Extracting video info...")
-            info = ydl.extract_info(video_url, download=False)
-            logging.debug(f"Video info extracted: {info.keys()}")
+    temp_cookie_file = create_temp_cookie_file()
+    if not temp_cookie_file:
+        return None
+
+    # Create yt-dlp options
+    ydl_opts = {
+        'nocheckcertificate': True,
+        'no_warnings': True,
+        'ignoreerrors': False,
+        'quiet': True,
+        'no_color': True,
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'referer': 'https://www.youtube.com/',
+        'cookiefile': temp_cookie_file,
+        'no_cache_dir': True
+    }
             
-            subtitle_formats = ['.en.vtt', '.en-US.vtt', '.en.ttml', '.en-US.ttml', '.en.srv3', '.en-US.srv3']
+    try:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            ydl_opts.update({
+                'skip_download': True,
+                'writesubtitles': True,
+                'writeautomaticsub': True,
+                'subtitleslangs': ['en', 'en-US'],
+                'subtitlesformat': 'vtt',
+                'outtmpl': os.path.join(temp_dir, '%(id)s.%(ext)s')
+            })
             
-            # Check for and download subtitles
-            if 'subtitles' in info and ('en' in info['subtitles'] or 'en-US' in info['subtitles']):
-                logging.info("Manual English subtitles found. Downloading...")
-                ydl.download([video_url])
-            elif 'automatic_captions' in info and ('en' in info['automatic_captions'] or 'en-US' in info['automatic_captions']):
-                logging.info("Automatic English captions found. Downloading...")
-                ydl.download([video_url])
-            else:
-                logging.warning(f"No English subtitles or captions available for video: {video_id}")
-                return None
+            logging.info(f"Attempting to fetch subtitles for video: {video_id}")
+            logging.debug(f"yt-dlp options: {ydl_opts}")
             
-            # Process the subtitle file
-            for subtitle_ext in subtitle_formats:
-                subtitle_filename = f"{video_id}{subtitle_ext}"
-                logging.info(f"Looking for subtitle file: {subtitle_filename}")
+            subtitles_text = None  # Variable to store successful subtitle extraction
+            
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                logging.info("Extracting video info...")
+                info = ydl.extract_info(video_url, download=False)
+                logging.debug(f"Video info extracted: {info.keys()}")
                 
-                if os.path.exists(subtitle_filename):
-                    logging.info(f"Subtitle file found. Reading content...")
-                    with open(subtitle_filename, 'r', encoding='utf-8') as f:
-                        subtitle_content = f.read()
+                subtitle_formats = ['.en.vtt', '.en-US.vtt', '.en.ttml', '.en-US.ttml', '.en.srv3', '.en-US.srv3']
+                
+                # Check for and download subtitles
+                if 'subtitles' in info and ('en' in info['subtitles'] or 'en-US' in info['subtitles']):
+                    logging.info("Manual English subtitles found. Downloading...")
+                    ydl.download([video_url])
+                elif 'automatic_captions' in info and ('en' in info['automatic_captions'] or 'en-US' in info['automatic_captions']):
+                    logging.info("Automatic English captions found. Downloading...")
+                    ydl.download([video_url])
+                else:
+                    logging.warning(f"No English subtitles or captions available for video: {video_id}")
+                    return None
+                
+                # Process the subtitle file
+                for subtitle_ext in subtitle_formats:
+                    subtitle_filename = os.path.join(temp_dir, f"{video_id}{subtitle_ext}")
+                    logging.info(f"Looking for subtitle file: {subtitle_filename}")
                     
-                    # Clean up the subtitle content
-                    cleaned_text = clean_subtitle_text(subtitle_content)
-                    
-                    logging.info("Cleaning up downloaded file...")
-                    os.remove(subtitle_filename)
-                    
-                    logging.info("Subtitles successfully extracted and processed.")
-                    return cleaned_text
-            
-            logging.error(f"No subtitle file found for any of the expected formats.")
+                    if os.path.exists(subtitle_filename):
+                        logging.info(f"Subtitle file found. Reading content...")
+                        with open(subtitle_filename, 'r', encoding='utf-8') as f:
+                            subtitle_content = f.read()
+                        
+                        # Clean up the subtitle content
+                        subtitles_text = clean_subtitle_text(subtitle_content)
+                        logging.info("Subtitles successfully extracted and processed.")
+                        break  # Exit loop once we have successful extraction
+                
+                return subtitles_text  # Return the subtitles if we found them
+                
+    except Exception as e:
+        logging.error(f"Error in subtitle extraction: {str(e)}")
+        return None
+        
+    finally:
+        # Always try to clean up the temporary cookie file
+        try:
+            cleanup_temp_cookie_file(temp_cookie_file)
         except Exception as e:
-            logging.exception(f"An error occurred while fetching subtitles for video {video_id}: {str(e)}")
-    
-    return None
+            logging.warning(f"Error during cleanup: {str(e)}")
 
 def clean_subtitle_text(subtitle_content):
     """
