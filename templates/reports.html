@@ -38,7 +38,7 @@
                         </div>
                         <div>
                             <p class="text-sm text-zinc-200 mb-2">Generated: {{ item.date_created.strftime('%Y-%m-%d %I:%M %p') }}</p>
-                            <button onclick="viewReport('{{ item.type }}', '{{ item.item.id }}')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded w-full transition-colors duration-300">
+                            <button class="view-report-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded w-full transition-colors duration-300">
                                 View Report
                             </button>
                         </div>
@@ -67,13 +67,13 @@
     <!-- List View -->
     <div id="list-view-container" class="hidden space-y-4">
         {% for item in combined_data %}
-        <div class="report-item bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 {% if item.type == 'channel_report' %}channel-report{% else %}video-summary{% endif %}">
+        <div class="report-item bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 {% if item.type == 'channel_report' %}channel-report{% else %}video-summary{% endif %}" data-id="{{ item.item.id }}">
             <div class="p-4 flex justify-between items-center">
-                <div class="flex items-center">
+                <div class="flex items-center flex-grow">
                     {% if item.type == 'channel_report' %}
                         {% set raw_data = item.item.raw_channel_data | from_json %}
                         <img src="{{ raw_data.avatar_url }}" alt="{{ item.item.channel_title }} avatar" class="w-10 h-10 rounded-full mr-3">
-                        <div>
+                        <div class="flex-grow">
                             <h3 class="text-lg font-semibold text-zinc-800">{{ item.item.channel_title }}</h3>
                             <p class="text-sm text-zinc-600">Generated: {{ item.date_created.strftime('%Y-%m-%d %I:%M %p') }}</p>
                         </div>
@@ -81,15 +81,17 @@
                         {% set raw_data = item.item.raw_video_data | from_json %}
                         {% set high_res_thumbnail = raw_data.thumbnail_url | replace("default.jpg", "maxresdefault.jpg") %}
                         <img src="{{ high_res_thumbnail }}" alt="{{ item.item.video_title }} thumbnail" class="w-32 h-18 object-cover rounded mr-3">
-                        <div>
+                        <div class="flex-grow">
                             <h3 class="text-lg font-semibold text-zinc-800">{{ item.item.video_title }}</h3>
                             <p class="text-sm text-zinc-600">Generated: {{ item.date_created.strftime('%Y-%m-%d %I:%M %p') }}</p>
                         </div>
                     {% endif %}
                 </div>
-                <button onclick="viewReport('{{ item.type }}', '{{ item.item.id }}')" class="{% if item.type == 'channel_report' %}bg-blue-500 hover:bg-blue-600{% else %}bg-green-500 hover:bg-green-600{% endif %} text-white font-bold py-2 px-4 rounded transition-colors duration-300">
-                    View {{ 'Report' if item.type == 'channel_report' else 'Summary' }}
-                </button>
+                <div class="flex-shrink-0 ml-4">
+                    <button class="view-report-btn {% if item.type == 'channel_report' %}bg-blue-500 hover:bg-blue-600{% else %}bg-green-500 hover:bg-green-600{% endif %} text-white font-bold py-2 px-4 rounded transition-colors duration-300">
+                        View {{ 'Report' if item.type == 'channel_report' else 'Summary' }}
+                    </button>
+                </div>
             </div>
         </div>
         {% endfor %}
@@ -114,31 +116,40 @@
 
 <script>
     function filterReports(type) {
-        const cards = document.querySelectorAll('.report-card');
-        cards.forEach(card => {
-            if (type === 'all' || (type === 'channel' && card.classList.contains('channel-report')) || (type === 'video' && card.classList.contains('video-summary'))) {
-                card.style.display = 'block';
+        const items = document.querySelectorAll('.report-card, .report-item');
+        items.forEach(item => {
+            if (type === 'all' || 
+                (type === 'channel' && item.classList.contains('channel-report')) || 
+                (type === 'video' && item.classList.contains('video-summary'))) {
+                item.style.display = '';
             } else {
-                card.style.display = 'none';
+                item.style.display = 'none';
             }
         });
     }
 
     document.getElementById('search-input').addEventListener('input', function(e) {
         const searchTerm = e.target.value.toLowerCase();
-        const cards = document.querySelectorAll('.report-card');
-        cards.forEach(card => {
-            const title = card.querySelector('h3').textContent.toLowerCase();
+        const items = document.querySelectorAll('.report-card, .report-item');
+        items.forEach(item => {
+            const title = item.querySelector('h3').textContent.toLowerCase();
             if (title.includes(searchTerm)) {
-                card.style.display = 'block';
+                item.style.display = '';
             } else {
-                card.style.display = 'none';
+                item.style.display = 'none';
             }
         });
     });
 
     function viewReport(type, id) {
+        if (!id) {
+            console.error('Attempted to view report with null ID');
+            return;
+        }
+
         let url = type === 'channel_report' ? `/report/${id}` : `/summary/${id}`;
+        console.log(`Fetching from URL: ${url}`); // Debug log
+        
         fetch(url)
         .then(response => {
             if (!response.ok) {
@@ -158,8 +169,10 @@
             document.getElementById('report-modal').classList.remove('hidden');
         })
         .catch(error => {
-            console.error('Error:', error);
-            alert(`Failed to load ${type}: ${error.message}`);
+            console.error('Error fetching report/summary:', error);
+            if (!error.message.includes('404')) {
+                alert(`Failed to load ${type}: ${error.message}`);
+            }
         });
     }
 
@@ -444,21 +457,44 @@
         }
     }
 
-    // Call the function when the page loads
     document.addEventListener('DOMContentLoaded', function() {
-        // Existing code for adding click events to report cards and items
-        const reportElements = document.querySelectorAll('.report-card, .report-item');
-        reportElements.forEach(element => {
-            element.addEventListener('click', function() {
-                const type = this.classList.contains('channel-report') ? 'channel_report' : 'video_summary';
-                const id = this.getAttribute('data-id');
+        // Add click handlers for view buttons
+        document.querySelectorAll('.view-report-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const container = e.target.closest('.report-card, .report-item');
+                if (!container) {
+                    console.error('No container found for button');
+                    return;
+                }
+                
+                const id = container.getAttribute('data-id');
+                if (!id) {
+                    console.error('No ID found on container:', container);
+                    return;
+                }
+                
+                const type = container.classList.contains('channel-report') ? 'channel_report' : 'video_summary';
+                console.log(`Viewing ${type} with ID: ${id}`); // Debug log
                 viewReport(type, id);
             });
         });
 
-        // New code to open modal for new items
+        // Open modal for new items if necessary
         openNewItemModal();
     });
+
+    // Close modal functionality
+    document.getElementById('close-modal').addEventListener('click', closeModal);
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeModal();
+        }
+    });
+
+    function closeModal() {
+        document.getElementById('report-modal').classList.add('hidden');
+    }
 
 
 
