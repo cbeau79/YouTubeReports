@@ -246,73 +246,66 @@ def get_yt_dlp_opts():
 def get_video_subtitles(video_id):
     """
     Fetch the subtitle file for a given video ID using yt-dlp.
-    Returns only the spoken text content without timestamps or metadata.
+    Returns only the spoken text content without formatting, timestamps, or metadata.
     Returns None if no subtitles are available.
     """
     video_url = f'https://www.youtube.com/watch?v={video_id}'
-    
-    class SubtitleLogger:
-        def debug(self, msg):
-            pass
-        def warning(self, msg):
-            pass
-        def error(self, msg):
-            pass
-    
-    ydl_opts = {
-        'logger': SubtitleLogger(),
+    ydl_opts = get_yt_dlp_opts()
+    ydl_opts.update({
         'skip_download': True,
         'writesubtitles': True,
         'writeautomaticsub': True,
         'subtitleslangs': ['en', 'en-US'],
-        'extract_flat': True,
-        'quiet': True
-    }
+        'subtitlesformat': 'vtt',
+        'outtmpl': '%(id)s.%(ext)s'
+    })
+    
+    logging.info(f"Attempting to fetch subtitles for video: {video_id}")
+    logging.debug(f"yt-dlp options: {ydl_opts}")
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
-            # Extract video info including subtitle data
+            logging.info("Extracting video info...")
             info = ydl.extract_info(video_url, download=False)
+            logging.debug(f"Video info extracted: {info.keys()}")
             
-            # Try manual subtitles first, then auto-generated
-            subtitle_info = None
+            subtitle_formats = ['.en.vtt', '.en-US.vtt', '.en.ttml', '.en-US.ttml', '.en.srv3', '.en-US.srv3']
+            
+            # Check for and download subtitles
             if 'subtitles' in info and ('en' in info['subtitles'] or 'en-US' in info['subtitles']):
-                subtitle_info = info['subtitles'].get('en') or info['subtitles'].get('en-US')
+                logging.info("Manual English subtitles found. Downloading...")
+                ydl.download([video_url])
             elif 'automatic_captions' in info and ('en' in info['automatic_captions'] or 'en-US' in info['automatic_captions']):
-                subtitle_info = info['automatic_captions'].get('en') or info['automatic_captions'].get('en-US')
-            
-            if not subtitle_info:
+                logging.info("Automatic English captions found. Downloading...")
+                ydl.download([video_url])
+            else:
+                logging.warning(f"No English subtitles or captions available for video: {video_id}")
                 return None
             
-            # Get the VTT format URL if available, otherwise try other formats
-            vtt_url = None
-            for fmt in subtitle_info:
-                if fmt.get('ext') == 'vtt':
-                    vtt_url = fmt['url']
-                    break
+            # Process the subtitle file
+            for subtitle_ext in subtitle_formats:
+                subtitle_filename = f"{video_id}{subtitle_ext}"
+                logging.info(f"Looking for subtitle file: {subtitle_filename}")
+                
+                if os.path.exists(subtitle_filename):
+                    logging.info(f"Subtitle file found. Reading content...")
+                    with open(subtitle_filename, 'r', encoding='utf-8') as f:
+                        subtitle_content = f.read()
+                    
+                    # Clean up the subtitle content
+                    cleaned_text = clean_subtitle_text(subtitle_content)
+                    
+                    logging.info("Cleaning up downloaded file...")
+                    os.remove(subtitle_filename)
+                    
+                    logging.info("Subtitles successfully extracted and processed.")
+                    return cleaned_text
             
-            if not vtt_url:
-                return None
-            
-            # Use yt-dlp's downloader to handle the request
-            subtitle_data = ydl.urlopen(vtt_url).read().decode('utf-8')
-            
-            # Parse VTT content to extract just the text
-            # Skip WebVTT header and timing information
-            subtitle_lines = []
-            for line in subtitle_data.split('\n'):
-                # Skip empty lines, timing lines, and WebVTT headers
-                if (line.strip() and 
-                    not line.startswith('WEBVTT') and 
-                    not '-->' in line and 
-                    not line[0].isdigit()):
-                    subtitle_lines.append(line.strip())
-            
-            return ' '.join(subtitle_lines)
-            
+            logging.error(f"No subtitle file found for any of the expected formats.")
         except Exception as e:
-            logging.error(f"Error fetching subtitles for {video_id}: {str(e)}")
-            return None
+            logging.exception(f"An error occurred while fetching subtitles for video {video_id}: {str(e)}")
+    
+    return None
 
 def clean_subtitle_text(subtitle_content):
     """
