@@ -74,7 +74,7 @@
         const channelUrl = document.getElementById('channel-url').value;
         
         progressLog.innerHTML = '';
-        addToMessageQueue('Starting channel analysis...');
+        addToMessageQueue('Starting channel analysis ...');
 
         fetch('/analyze_channel', {
             method: 'POST',
@@ -103,7 +103,7 @@
                             } else if (data.error) {
                                 addToMessageQueue(`Error: ${data.error}`);
                             } else if (data.report) {
-                                addToMessageQueue('Report generated. Redirecting to reports page...');
+                                addToMessageQueue('Report generated. Redirecting to reports page ...');
                                 setTimeout(() => {
                                     window.location.href = data.redirect_url;
                                 }, 2000);

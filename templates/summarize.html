@@ -74,7 +74,7 @@
         const videoUrl = document.getElementById('video-url').value;
         
         progressLog.innerHTML = '';
-        addToMessageQueue('Starting video summarization...');
+        addToMessageQueue('Starting video summarization ...');
 
         fetch('/summarize_video', {
             method: 'POST',
@@ -91,7 +91,7 @@
             function readStream() {
                 reader.read().then(({ done, value }) => {
                     if (done) {
-                        addToMessageQueue('Summarization complete! Redirecting to reports page...');
+                        addToMessageQueue('Summarization complete! Redirecting to reports page ...');
                         return;
                     }
                     buffer += decoder.decode(value, {stream: true});
