@@ -108,7 +108,7 @@
                                 } else if (data.type === 'error') {
                                     addToMessageQueue(`Error: ${data.message}`);
                                 } else if (data.type === 'summary') {
-                                    addToMessageQueue('Summary generated. Preparing to redirect...');
+                                    addToMessageQueue('Summary generated. Preparing to redirect ...');
                                     setTimeout(() => {
                                         window.location.href = data.data.redirect_url;
                                     }, 2000);
