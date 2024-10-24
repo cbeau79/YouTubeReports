@@ -488,7 +488,7 @@ def analyze_channel():
                 return
 
             channel_url = data['channel_url']
-            yield json.dumps({'progress': 'Extracting channel ID ...'}) + '\n'
+            yield json.dumps({'progress': 'Extracting channel ID '}) + '\n'
             channel_id = extract_channel_id(channel_url)
 
             if not channel_id:
@@ -501,12 +501,12 @@ def analyze_channel():
             existing_report = ChannelReport.query.filter_by(channel_id=channel_id).first()
             
             if existing_report:
-                yield json.dumps({'progress': 'Existing report found. Retrieving data...'}) + '\n'
+                yield json.dumps({'progress': 'Existing report found. Retrieving data '}) + '\n'
                 report_data = json.loads(existing_report.report_data)
                 channel_data = json.loads(existing_report.raw_channel_data)
                 channel_title = channel_data.get('title', 'Unknown Channel')
             else:
-                yield json.dumps({'progress': 'Fetching channel data ...'}) + '\n'
+                yield json.dumps({'progress': 'Fetching channel data from YouTube '}) + '\n'
                 channel_data = fetch_channel_data(channel_id)
 
                 if not channel_data:
@@ -516,7 +516,7 @@ def analyze_channel():
                 channel_title = channel_data.get('title', 'Unknown Channel')
                 yield json.dumps({'progress': f'Analyzing channel: {channel_title}'}) + '\n'
 
-                yield json.dumps({'progress': 'Generating report (can take a minute) ...'}) + '\n'
+                yield json.dumps({'progress': 'Generating report (can take a minute) '}) + '\n'
                 report_json = generate_channel_report(channel_data)
 
                 if not report_json:
@@ -630,7 +630,7 @@ def summarize_video():
                 return
 
             video_url = data['video_url']
-            yield json.dumps({'type': 'progress', 'message': 'Extracting video ID ...'}) + '\n'
+            yield json.dumps({'type': 'progress', 'message': 'Extracting video ID '}) + '\n'
             video_id = extract_video_id(video_url)
 
             if not video_id:
@@ -643,7 +643,7 @@ def summarize_video():
             existing_summary = VideoSummary.query.filter_by(video_id=video_id).first()
             
             if existing_summary:
-                yield json.dumps({'type': 'progress', 'message': 'Existing summary found. Retrieving data...'}) + '\n'
+                yield json.dumps({'type': 'progress', 'message': 'Existing summary found. Retrieving data '}) + '\n'
                 
                 # Check if the current user already has access to this summary
                 user_access = UserVideoAccess.query.filter_by(user_id=current_user.id, summary_id=existing_summary.id).first()
@@ -669,7 +669,7 @@ def summarize_video():
                 }}) + '\n'
                 return
 
-            yield json.dumps({'type': 'progress', 'message': 'Fetching video data ...'}) + '\n'
+            yield json.dumps({'type': 'progress', 'message': 'Fetching video data from YouTube '}) + '\n'
             video_data = get_video_data(video_id)
 
             if not video_data:
@@ -679,7 +679,7 @@ def summarize_video():
             video_title = video_data[0].get('title', 'Unknown Video')
             yield json.dumps({'type': 'progress', 'message': f'Summarizing video: {video_title}'}) + '\n'
 
-            yield json.dumps({'type': 'progress', 'message': 'Generating summary (can take a minute) ...'}) + '\n'
+            yield json.dumps({'type': 'progress', 'message': 'Generating summary (can take up to a minute) '}) + '\n'
             summary_json = generate_video_summary(video_data[0])
             
             try:

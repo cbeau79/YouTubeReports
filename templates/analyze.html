@@ -33,11 +33,18 @@
     const progressLog = document.getElementById('progress-log');
     let messageQueue = [];
     let isTyping = false;
+    let currentLogEntry = null;
 
     function addToMessageQueue(message) {
         messageQueue.push(message);
         if (!isTyping) {
             typeNextMessage();
+        }
+    }
+
+    function removeDotsAnimation() {
+        if (currentLogEntry) {
+            currentLogEntry.classList.remove('active');
         }
     }
 
@@ -49,21 +56,37 @@
 
         isTyping = true;
         const message = messageQueue.shift();
+        
+        // Remove animation from previous entry
+        removeDotsAnimation();
+
+        // Create new log entry
         const logEntry = document.createElement('div');
         logEntry.className = 'log-entry';
         logEntry.innerHTML = `> <span class="vidiprinter"></span>`;
         progressLog.appendChild(logEntry);
         
+        // Update current log entry reference
+        currentLogEntry = logEntry;
+        
         typeVidiprinter(logEntry.querySelector('.vidiprinter'), message, () => {
+            // Add animation to current entry
+            logEntry.classList.add('active');
             progressLog.scrollTop = progressLog.scrollHeight;
-            setTimeout(typeNextMessage, 50); // Small delay between messages
+            
+            // If there are more messages, continue after a delay
+            if (messageQueue.length > 0) {
+                setTimeout(typeNextMessage, 50);
+            } else {
+                isTyping = false;
+            }
         });
     }
 
     function typeVidiprinter(element, text, onComplete, index = 0) {
         if (index < text.length) {
             element.textContent += text[index];
-            setTimeout(() => typeVidiprinter(element, text, onComplete, index + 1), 10); // Faster typing (20ms)
+            setTimeout(() => typeVidiprinter(element, text, onComplete, index + 1), 10);
         } else {
             onComplete();
         }
@@ -74,7 +97,7 @@
         const channelUrl = document.getElementById('channel-url').value;
         
         progressLog.innerHTML = '';
-        addToMessageQueue('Starting channel analysis ...');
+        addToMessageQueue('Starting channel analysis');
 
         fetch('/analyze_channel', {
             method: 'POST',
@@ -99,11 +122,14 @@
                             const data = JSON.parse(msg);
                             console.log('Received data:', data);
                             if (data.progress) {
+                                removeDotsAnimation();
                                 addToMessageQueue(data.progress);
                             } else if (data.error) {
+                                removeDotsAnimation();
                                 addToMessageQueue(`Error: ${data.error}`);
                             } else if (data.report) {
-                                addToMessageQueue('Report generated. Redirecting to reports page ...');
+                                removeDotsAnimation();
+                                addToMessageQueue('Report generated. Redirecting to reports page');
                                 setTimeout(() => {
                                     window.location.href = data.redirect_url;
                                 }, 2000);
@@ -120,6 +146,7 @@
         })
         .catch((error) => {
             console.error('Error:', error);
+            removeDotsAnimation();
             addToMessageQueue(`Error: ${error.message}`);
         });
     });
