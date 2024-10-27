@@ -16,6 +16,7 @@ from pathlib import Path
 import stat
 import shutil
 import tempfile
+from cookie_manager import CookieValidator
 
 # Use configuration values
 API_KEY = Config.YOUTUBE_API_KEY # os.environ.get('YOUTUBE_API_KEY')
@@ -304,23 +305,36 @@ def get_video_subtitles(video_id):
     """
     video_url = f'https://www.youtube.com/watch?v={video_id}'
     temp_cookie_file = create_temp_cookie_file()
+    
     if not temp_cookie_file:
+        logging.error("Failed to create temporary cookie file")
         return None
-
-    # Create yt-dlp options
-    ydl_opts = {
-        'nocheckcertificate': True,
-        'no_warnings': True,
-        'ignoreerrors': False,
-        'quiet': True,
-        'no_color': True,
-        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'referer': 'https://www.youtube.com/',
-        'cookiefile': temp_cookie_file,
-        'no_cache_dir': True
-    }
-            
+    
     try:
+        # Validate cookies before proceeding
+        cookie_validator = CookieValidator(COOKIE_FILE)
+        is_valid, message = cookie_validator.check_status()
+        
+        if not is_valid:
+            logging.error(f"Cookie validation failed: {message}")
+            # You could implement some notification system here
+            # For now, just log it prominently
+            logging.critical("ATTENTION: YouTube cookies need to be refreshed!")
+            return None
+
+        # Create yt-dlp options
+        ydl_opts = {
+            'nocheckcertificate': True,
+            'no_warnings': True,
+            'ignoreerrors': False,
+            'quiet': True,
+            'no_color': True,
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'referer': 'https://www.youtube.com/',
+            'cookiefile': temp_cookie_file,
+            'no_cache_dir': True
+        }
+            
         with tempfile.TemporaryDirectory() as temp_dir:
             ydl_opts.update({
                 'skip_download': True,
@@ -385,39 +399,58 @@ def get_video_subtitles(video_id):
 def clean_subtitle_text(subtitle_content):
     """
     Clean subtitle content to extract only the spoken text.
-    Removes all formatting, timestamps, and metadata.
+    Removes all formatting, timestamps, positioning, and metadata.
+    
+    Args:
+        subtitle_content (str): Raw subtitle content
+        
+    Returns:
+        str: Clean spoken text only
     """
     # Remove WEBVTT header and metadata
     text = re.sub(r'WEBVTT\n.*?\n\n', '', subtitle_content, flags=re.DOTALL)
     
-    # Remove timestamps (including arrow and newlines)
-    text = re.sub(r'\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}\n', '', text)
+    # Remove positioning information (align:start position:0%)
+    text = re.sub(r'align:[^\s]+ position:\d+%', '', text)
     
-    # Remove shorter timestamp formats
-    text = re.sub(r'\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}\.\d{3}\n', '', text)
+    # Remove timestamps in various formats:
+    # Standard format: 00:00:00.000 --> 00:00:00.000
+    text = re.sub(r'\d{2}:\d{2}:\d{2}\.\d{3}\s*-->\s*\d{2}:\d{2}:\d{2}\.\d{3}', '', text)
+    # Shortened format: 00:00.000 --> 00:00.000
+    text = re.sub(r'\d{2}:\d{2}\.\d{3}\s*-->\s*\d{2}:\d{2}\.\d{3}', '', text)
+    # Any remaining timestamp-like patterns
+    text = re.sub(r'^\d{2}:\d{2}(?::\d{2})?\.\d{3}', '', text, flags=re.MULTILINE)
     
-    # Remove line numbers
+    # Remove line numbers and indices
+    text = re.sub(r'^\d+\s*$', '', text, flags=re.MULTILINE)
     text = re.sub(r'^\d+\n', '', text, flags=re.MULTILINE)
     
-    # Remove speaker labels (text in parentheses or brackets at start of lines)
-    text = re.sub(r'^\s*[\[\(].*?[\]\)]\s*', '', text, flags=re.MULTILINE)
+    # Remove speaker labels and cues
+    text = re.sub(r'^\s*\[.*?\]\s*', '', text, flags=re.MULTILINE)  # [Speaker Name]
+    text = re.sub(r'^\s*\(.*?\)\s*', '', text, flags=re.MULTILINE)  # (sound effects)
+    text = re.sub(r'<v\s+[^>]+>', '', text)  # <v Speaker Name>
     
-    # Remove HTML-style tags
+    # Remove HTML-style tags and formatting
     text = re.sub(r'<[^>]+>', '', text)
+    text = re.sub(r'&\w+;', '', text)  # HTML entities
     
-    # Remove multiple spaces
-    text = re.sub(r'\s+', ' ', text)
+    # Remove any decimal numbers that might be part of formatting
+    text = re.sub(r'\.\d{3}\s*', '', text)
     
-    # Remove multiple newlines and replace with space
-    text = re.sub(r'\n+', ' ', text)
+    # Clean up whitespace
+    text = re.sub(r'\s*\n\s*\n\s*', '\n', text)  # Multiple newlines to single
+    text = re.sub(r'\s+', ' ', text)  # Multiple spaces to single
+    text = re.sub(r'^\s+|\s+$', '', text, flags=re.MULTILINE)  # Trim lines
     
-    # Remove any remaining timing marks (sometimes found in different formats)
-    text = re.sub(r'\d{2}:\d{2}(?::\d{2})?\s*', '', text)
+    # Fix common punctuation issues
+    text = re.sub(r'\s+([.,!?])', r'\1', text)  # Remove space before punctuation
+    text = re.sub(r'([.,!?])\s+', r'\1 ', text)  # Ensure single space after punctuation
     
-    # Clean up any artifacts from removal process
-    text = re.sub(r'\s+[,.]', '.', text)  # Fix spacing around punctuation
-    text = re.sub(r'\s+', ' ', text)      # Remove any double spaces
-    text = text.strip()                    # Remove leading/trailing whitespace
+    # Final cleanup
+    text = text.strip()
+    
+    # Ensure sentences are properly spaced
+    text = re.sub(r'(?<=[.!?])\s*(?=[A-Z])', ' ', text)
     
     return text
 

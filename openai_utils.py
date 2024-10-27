@@ -33,13 +33,17 @@ def generate_channel_report(channel_data):
     # Load JSON report template
     with open('json_template_report.json') as f:
         json_template_report = json.load(f)
+
+    ## To debug the channel data, un-comment this
+    # with open('channel_data_dump.json', 'w', encoding='utf-8') as f:
+    #     json.dump(channel_data, f, indent=2)
     
     # Craft the prompt
     prompt = f"""
     You are a YouTube content consultant. Analyze the following YouTube channel data and provide a comprehensive report that focuses on insight and understanding. The data is provided in JSON format:
 
     <channel_data>
-    {channel_data}
+    {json.dump(channel_data, f, indent=2)}
     </channel_data>
     
     Analyze the above data and present the key insights in the following format: 
