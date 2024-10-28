@@ -327,7 +327,7 @@ class CookieManager:
             logging.error(f"Error in cleanup: {str(e)}")
 
 def get_yt_dlp_opts(temp_cookie_file, temp_dir):
-    """Get yt-dlp options with strict isolation and production settings."""
+    """Get yt-dlp options with enhanced anti-bot-detection measures."""
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(temp_cookie_file)))
     return {
         'quiet': True,
@@ -345,28 +345,34 @@ def get_yt_dlp_opts(temp_cookie_file, temp_dir):
         'paths': {'home': base_dir},
         'cookiesfrombrowser': None,
         'no_config': True,
-        'no_write_playlist_metafiles': True,
-        'no_write_comments': True,
-        'no_write_info_json': True,
-        'no_write_description': True,
-        'no_write_thumbnail': True,
         'extract_flat': True,
-        'environ': {'HOME': base_dir, 'XDG_CONFIG_HOME': base_dir},
-        'cachedir': os.path.join(base_dir, 'cache'),
-        # Add production-specific options
+        'socket_timeout': 30,
+        'retries': 5,
+        'fragment_retries': 5,
+        'retry_sleep': 5,
+        'sleep_interval': 2,
+        'max_sleep_interval': 5,
+        'ignoreerrors': True,
+        'no_playlist': True,
+        # Enhanced browser emulation
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
         'http_headers': {
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
             'DNT': '1',
             'Connection': 'keep-alive',
-        },
-        'socket_timeout': 30,
-        'retries': 3
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'TE': 'trailers'
+        }
     }
 
 def get_video_subtitles(video_id):
-    """Fetch subtitle file for a given video ID using yt-dlp."""
+    """Enhanced subtitle fetching with better error handling and retry logic."""
     video_url = f'https://www.youtube.com/watch?v={video_id}'
     cookie_manager = CookieManager(COOKIE_FILE)
     temp_cookie_file, temp_dir = cookie_manager.create_temp_copy()
@@ -377,56 +383,87 @@ def get_video_subtitles(video_id):
     
     try:
         logging.info("=== Starting subtitle extraction ===")
-        logging.info(f"Checking current cookie file state:")
-        if os.path.exists(COOKIE_FILE):
-            logging.info(f"Original cookie file exists at: {COOKIE_FILE}")
-        else:
-            logging.info("Original cookie file is moved out of the way")
-            
+        
         cookie_validator = CookieValidator(temp_cookie_file)
         is_valid, message = cookie_validator.check_status()
         
         if not is_valid:
             logging.error(f"Cookie validation failed: {message}")
-            logging.critical("ATTENTION: YouTube cookies need to be refreshed!")
-            return None
+            # Try fallback method for subtitles
+            return get_subtitles_fallback(video_id)
 
         with tempfile.TemporaryDirectory() as subtitles_temp_dir:
             logging.info(f"Using subtitles temp dir: {subtitles_temp_dir}")
             ydl_opts = get_yt_dlp_opts(temp_cookie_file, temp_dir)
             ydl_opts['outtmpl'] = os.path.join(subtitles_temp_dir, '%(id)s.%(ext)s')
             
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(video_url, download=False)
-                
-                has_subtitles = ('subtitles' in info and ('en' in info['subtitles'] or 'en-US' in info['subtitles'])) or \
-                               ('automatic_captions' in info and ('en' in info['automatic_captions'] or 'en-US' in info['automatic_captions']))
-                
-                if has_subtitles:
-                    logging.info("Downloading subtitles...")
-                    ydl.download([video_url])
-                    
-                    for ext in ['.en.vtt', '.en-US.vtt']:
-                        subtitle_file = os.path.join(subtitles_temp_dir, f"{video_id}{ext}")
-                        if os.path.exists(subtitle_file):
-                            with open(subtitle_file, 'r', encoding='utf-8') as f:
-                                return clean_subtitle_text(f.read())
-
-                logging.warning(f"No subtitles found for video: {video_id}")
-                return None
+            max_retries = 3
+            retry_count = 0
+            
+            while retry_count < max_retries:
+                try:
+                    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                        info = ydl.extract_info(video_url, download=False)
+                        
+                        # Check for available subtitles
+                        has_subtitles = ('subtitles' in info and ('en' in info['subtitles'] or 'en-US' in info['subtitles'])) or \
+                                      ('automatic_captions' in info and ('en' in info['automatic_captions'] or 'en-US' in info['automatic_captions']))
+                        
+                        if has_subtitles:
+                            logging.info("Downloading subtitles...")
+                            ydl.download([video_url])
+                            
+                            # Try multiple subtitle file variations
+                            subtitle_variations = [
+                                f"{video_id}.en.vtt",
+                                f"{video_id}.en-US.vtt",
+                                f"{video_id}.en-GB.vtt",
+                                f"{video_id}.en-AUTO.vtt"
+                            ]
+                            
+                            for subtitle_file in subtitle_variations:
+                                full_path = os.path.join(subtitles_temp_dir, subtitle_file)
+                                if os.path.exists(full_path):
+                                    with open(full_path, 'r', encoding='utf-8') as f:
+                                        return clean_subtitle_text(f.read())
+                            
+                            logging.warning("No subtitle files found after download")
+                            return get_subtitles_fallback(video_id)
+                            
+                except Exception as e:
+                    retry_count += 1
+                    if retry_count < max_retries:
+                        logging.warning(f"Attempt {retry_count} failed, retrying... Error: {str(e)}")
+                        time.sleep(2 ** retry_count)  # Exponential backoff
+                    else:
+                        logging.error(f"All attempts failed. Error: {str(e)}")
+                        return get_subtitles_fallback(video_id)
+                        
+            return None
 
     except Exception as e:
         logging.error(f"Error in subtitle extraction: {str(e)}")
-        return None
+        return get_subtitles_fallback(video_id)
         
     finally:
         logging.info("=== Cleaning up ===")
         cookie_manager.cleanup(temp_cookie_file, temp_dir)
-        if os.path.exists(COOKIE_FILE):
-            logging.info("Cookie file was restored to original location")
-            with open(COOKIE_FILE, 'r') as f:
-                first_line = f.readline().strip()
-            logging.info(f"First line of restored cookie file: {first_line}")
+
+def get_subtitles_fallback(video_id):
+    """Fallback method to get subtitles using alternative approach."""
+    try:
+        # Try using YouTube's transcript API directly as fallback
+        from youtube_transcript_api import YouTubeTranscriptApi
+        
+        transcripts = YouTubeTranscriptApi.get_transcript(video_id, languages=['en'])
+        if transcripts:
+            # Combine all transcript pieces into one text
+            full_text = ' '.join(item['text'] for item in transcripts)
+            return clean_subtitle_text(full_text)
+            
+    except Exception as e:
+        logging.error(f"Fallback subtitle extraction failed: {str(e)}")
+        return None
 
 def clean_subtitle_text(subtitle_content):
     """
