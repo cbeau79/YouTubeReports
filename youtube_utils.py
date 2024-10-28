@@ -16,7 +16,9 @@ from pathlib import Path
 import stat
 import shutil
 import tempfile
+import fcntl
 from cookie_manager import CookieValidator
+from contextlib import contextmanager
 
 # Use configuration values
 API_KEY = Config.YOUTUBE_API_KEY # os.environ.get('YOUTUBE_API_KEY')
@@ -235,160 +237,188 @@ def get_channel_videos(channel_id, max_results):
 # SUBTITLE FUNCTIONS
 # ---
 
-def create_temp_cookie_file():
-    """Create a temporary copy of the cookie file with appropriate permissions."""
-    if not os.path.exists(COOKIE_FILE):
-        logging.error(f"Original cookie file {COOKIE_FILE} not found")
-        return None
-        
-    try:
-        # Create a temporary file
-        temp_cookie_file = os.path.join(tempfile.gettempdir(), f"yt_cookies_{os.getpid()}.txt")
-        
-        # Copy the original cookie file to the temporary location
-        shutil.copy2(COOKIE_FILE, temp_cookie_file)
-        
-        # Set appropriate permissions on the temporary file
-        os.chmod(temp_cookie_file, stat.S_IRUSR | stat.S_IWUSR)  # Read and write for owner
-        
-        logging.info(f"Created temporary cookie file: {temp_cookie_file}")
-        return temp_cookie_file
-        
-    except Exception as e:
-        logging.error(f"Error creating temporary cookie file: {str(e)}")
-        return None
+class CookieManager:
+    def __init__(self, cookie_file):
+        # Convert to absolute path
+        self.cookie_file = os.path.abspath(cookie_file)
+        # Store the directory the cookie file is in
+        self.original_dir = os.path.dirname(self.cookie_file)
+        self.lock_file = f"{cookie_file}.lock"
+        self.backup_file = f"{cookie_file}.backup"
 
-def cleanup_temp_cookie_file(temp_file):
-    """Clean up the temporary cookie file."""
-    if temp_file and os.path.exists(temp_file):
+    @contextmanager
+    def file_lock(self):
+        """Context manager for file locking."""
+        lock_fd = open(self.lock_file, 'w')
         try:
-            # Ensure the file is writable before attempting to delete
-            try:
-                os.chmod(temp_file, stat.S_IRUSR | stat.S_IWUSR)
-            except Exception as e:
-                logging.warning(f"Could not modify permissions for cleanup: {str(e)}")
-                
-            os.remove(temp_file)
-            logging.info(f"Removed temporary cookie file: {temp_file}")
-        except Exception as e:
-            logging.warning(f"Error removing temporary cookie file: {str(e)}")
+            fcntl.flock(lock_fd, fcntl.LOCK_EX)
+            yield
+        finally:
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            lock_fd.close()
 
-def get_yt_dlp_opts():
-    """Get yt-dlp options with cookie file configuration."""
-    temp_cookie_file = create_temp_cookie_file()
-    if not temp_cookie_file:
-        return None
-    
+    def create_temp_copy(self):
+        """Create an isolated environment with cookie file."""
+        try:
+            with self.file_lock():
+                logging.info(f"Original cookie file location: {self.cookie_file}")
+                logging.info(f"Original directory: {self.original_dir}")
+
+                # Create isolated directory structure far from original
+                base_temp = tempfile.gettempdir()
+                temp_dir = os.path.join(base_temp, f'yt_cookies_{os.getpid()}')
+                cookies_dir = os.path.join(temp_dir, 'youtube', 'cookies')
+                os.makedirs(cookies_dir, exist_ok=True)
+                
+                temp_cookie_file = os.path.join(cookies_dir, 'cookies.txt')
+                logging.info(f"Temporary cookie file location: {temp_cookie_file}")
+
+                # Create backup if it doesn't exist
+                if not os.path.exists(self.backup_file):
+                    shutil.copy2(self.cookie_file, self.backup_file)
+                    os.chmod(self.backup_file, stat.S_IRUSR)
+                    logging.info(f"Created backup cookie file: {self.backup_file}")
+
+                # Temporarily move original out of the way
+                temp_original = f"{self.cookie_file}.original"
+                if os.path.exists(self.cookie_file):
+                    os.rename(self.cookie_file, temp_original)
+                    logging.info(f"Moved original cookie file to: {temp_original}")
+
+                # Copy from backup to temp location
+                shutil.copy2(self.backup_file, temp_cookie_file)
+                os.chmod(temp_cookie_file, stat.S_IRUSR | stat.S_IWUSR)
+                
+                return temp_cookie_file, temp_dir
+
+        except Exception as e:
+            logging.error(f"Error in create_temp_copy: {str(e)}")
+            # Restore original if something went wrong
+            if 'temp_original' in locals() and os.path.exists(temp_original):
+                os.rename(temp_original, self.cookie_file)
+            if 'temp_dir' in locals() and os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir)
+            return None, None
+
+    def cleanup(self, temp_file, temp_dir):
+        """Clean up temporary files and restore original."""
+        try:
+            if temp_file and os.path.exists(temp_file):
+                logging.info(f"Cleaning up temp cookie file: {temp_file}")
+                os.chmod(temp_file, stat.S_IRUSR | stat.S_IWUSR)
+                os.remove(temp_file)
+
+            if temp_dir and os.path.exists(temp_dir):
+                logging.info(f"Cleaning up temp directory: {temp_dir}")
+                for root, dirs, files in os.walk(temp_dir):
+                    for d in dirs:
+                        os.chmod(os.path.join(root, d), stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+                    for f in files:
+                        os.chmod(os.path.join(root, f), stat.S_IRUSR | stat.S_IWUSR)
+                shutil.rmtree(temp_dir)
+
+            # Restore original file
+            temp_original = f"{self.cookie_file}.original"
+            if os.path.exists(temp_original):
+                logging.info(f"Restoring original cookie file from: {temp_original}")
+                os.rename(temp_original, self.cookie_file)
+
+        except Exception as e:
+            logging.error(f"Error in cleanup: {str(e)}")
+
+def get_yt_dlp_opts(temp_cookie_file, temp_dir):
+    """Get yt-dlp options with strict isolation."""
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(temp_cookie_file)))
     return {
-        'nocheckcertificate': True,
-        'no_warnings': True,
-        'ignoreerrors': False,
         'quiet': True,
+        'no_warnings': True,
         'no_color': True,
-        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'referer': 'https://www.youtube.com/',
         'cookiefile': temp_cookie_file,
-        'no_cache_dir': True
+        'no_write_download_archive': True,
+        'skip_download': True,
+        'writesubtitles': True,
+        'writeautomaticsub': True,
+        'subtitleslangs': ['en', 'en-US'],
+        'subtitlesformat': 'vtt',
+        'updatetime': False,
+        'no_cache_dir': True,
+        'paths': {'home': base_dir},
+        'cookiesfrombrowser': None,
+        'no_config': True,
+        # Additional options to prevent file writing
+        'no_write_playlist_metafiles': True,
+        'no_write_comments': True,
+        'no_write_info_json': True,
+        'no_write_description': True,
+        'no_write_thumbnail': True,
+        'extract_flat': True,
+        # More isolation options
+        'environ': {'HOME': base_dir, 'XDG_CONFIG_HOME': base_dir},
+        'cachedir': os.path.join(base_dir, 'cache')
     }
 
 def get_video_subtitles(video_id):
-    """
-    Fetch the subtitle file for a given video ID using yt-dlp.
-    Returns only the spoken text content without formatting, timestamps, or metadata.
-    Returns None if no subtitles are available.
-    """
+    """Fetch subtitle file for a given video ID using yt-dlp."""
     video_url = f'https://www.youtube.com/watch?v={video_id}'
-    temp_cookie_file = create_temp_cookie_file()
+    cookie_manager = CookieManager(COOKIE_FILE)
+    temp_cookie_file, temp_dir = cookie_manager.create_temp_copy()
     
     if not temp_cookie_file:
         logging.error("Failed to create temporary cookie file")
         return None
     
     try:
-        # Validate cookies before proceeding
-        cookie_validator = CookieValidator(COOKIE_FILE)
+        logging.info("=== Starting subtitle extraction ===")
+        logging.info(f"Checking current cookie file state:")
+        if os.path.exists(COOKIE_FILE):
+            logging.info(f"Original cookie file exists at: {COOKIE_FILE}")
+        else:
+            logging.info("Original cookie file is moved out of the way")
+            
+        cookie_validator = CookieValidator(temp_cookie_file)
         is_valid, message = cookie_validator.check_status()
         
         if not is_valid:
             logging.error(f"Cookie validation failed: {message}")
-            # You could implement some notification system here
-            # For now, just log it prominently
             logging.critical("ATTENTION: YouTube cookies need to be refreshed!")
             return None
 
-        # Create yt-dlp options
-        ydl_opts = {
-            'nocheckcertificate': True,
-            'no_warnings': True,
-            'ignoreerrors': False,
-            'quiet': True,
-            'no_color': True,
-            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'referer': 'https://www.youtube.com/',
-            'cookiefile': temp_cookie_file,
-            'no_cache_dir': True
-        }
-            
-        with tempfile.TemporaryDirectory() as temp_dir:
-            ydl_opts.update({
-                'skip_download': True,
-                'writesubtitles': True,
-                'writeautomaticsub': True,
-                'subtitleslangs': ['en', 'en-US'],
-                'subtitlesformat': 'vtt',
-                'outtmpl': os.path.join(temp_dir, '%(id)s.%(ext)s')
-            })
-            
-            logging.info(f"Attempting to fetch subtitles for video: {video_id}")
-            logging.debug(f"yt-dlp options: {ydl_opts}")
-            
-            subtitles_text = None  # Variable to store successful subtitle extraction
+        with tempfile.TemporaryDirectory() as subtitles_temp_dir:
+            logging.info(f"Using subtitles temp dir: {subtitles_temp_dir}")
+            ydl_opts = get_yt_dlp_opts(temp_cookie_file, temp_dir)
+            ydl_opts['outtmpl'] = os.path.join(subtitles_temp_dir, '%(id)s.%(ext)s')
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                logging.info("Extracting video info...")
                 info = ydl.extract_info(video_url, download=False)
-                logging.debug(f"Video info extracted: {info.keys()}")
                 
-                subtitle_formats = ['.en.vtt', '.en-US.vtt', '.en.ttml', '.en-US.ttml', '.en.srv3', '.en-US.srv3']
+                has_subtitles = ('subtitles' in info and ('en' in info['subtitles'] or 'en-US' in info['subtitles'])) or \
+                               ('automatic_captions' in info and ('en' in info['automatic_captions'] or 'en-US' in info['automatic_captions']))
                 
-                # Check for and download subtitles
-                if 'subtitles' in info and ('en' in info['subtitles'] or 'en-US' in info['subtitles']):
-                    logging.info("Manual English subtitles found. Downloading...")
+                if has_subtitles:
+                    logging.info("Downloading subtitles...")
                     ydl.download([video_url])
-                elif 'automatic_captions' in info and ('en' in info['automatic_captions'] or 'en-US' in info['automatic_captions']):
-                    logging.info("Automatic English captions found. Downloading...")
-                    ydl.download([video_url])
-                else:
-                    logging.warning(f"No English subtitles or captions available for video: {video_id}")
-                    return None
-                
-                # Process the subtitle file
-                for subtitle_ext in subtitle_formats:
-                    subtitle_filename = os.path.join(temp_dir, f"{video_id}{subtitle_ext}")
-                    logging.info(f"Looking for subtitle file: {subtitle_filename}")
                     
-                    if os.path.exists(subtitle_filename):
-                        logging.info(f"Subtitle file found. Reading content...")
-                        with open(subtitle_filename, 'r', encoding='utf-8') as f:
-                            subtitle_content = f.read()
-                        
-                        # Clean up the subtitle content
-                        subtitles_text = clean_subtitle_text(subtitle_content)
-                        logging.info("Subtitles successfully extracted and processed.")
-                        break  # Exit loop once we have successful extraction
-                
-                return subtitles_text  # Return the subtitles if we found them
-                
+                    for ext in ['.en.vtt', '.en-US.vtt']:
+                        subtitle_file = os.path.join(subtitles_temp_dir, f"{video_id}{ext}")
+                        if os.path.exists(subtitle_file):
+                            with open(subtitle_file, 'r', encoding='utf-8') as f:
+                                return clean_subtitle_text(f.read())
+
+                logging.warning(f"No subtitles found for video: {video_id}")
+                return None
+
     except Exception as e:
         logging.error(f"Error in subtitle extraction: {str(e)}")
         return None
         
     finally:
-        # Always try to clean up the temporary cookie file
-        try:
-            cleanup_temp_cookie_file(temp_cookie_file)
-        except Exception as e:
-            logging.warning(f"Error during cleanup: {str(e)}")
+        logging.info("=== Cleaning up ===")
+        cookie_manager.cleanup(temp_cookie_file, temp_dir)
+        if os.path.exists(COOKIE_FILE):
+            logging.info("Cookie file was restored to original location")
+            with open(COOKIE_FILE, 'r') as f:
+                first_line = f.readline().strip()
+            logging.info(f"First line of restored cookie file: {first_line}")
 
 def clean_subtitle_text(subtitle_content):
     """
@@ -504,4 +534,125 @@ def fetch_channel_data(channel_id):
     except Exception as e:
         print(f"An error occurred while fetching channel data: {e}")
         return None
+
+
+def test_cookies(cookie_file):
+    """Utility function to test cookie validity and provide detailed feedback."""
+    logging.info(f"Testing cookies from: {cookie_file}")
     
+    # First check file exists and is readable
+    if not os.path.exists(cookie_file):
+        logging.error("Cookie file does not exist")
+        return False
+        
+    try:
+        # Read and check cookie content
+        with open(cookie_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+            lines = content.split('\n')
+            logging.info(f"Cookie file contains {len(lines)} lines")
+            
+            # Check for essential cookies
+            youtube_cookies = []
+            for line in lines:
+                if '.youtube.com' in line and 'TRUE' in line and not line.startswith('#'):
+                    parts = line.split('\t')
+                    if len(parts) >= 6:
+                        cookie_name = parts[5] if len(parts) > 5 else 'unknown'
+                        youtube_cookies.append(cookie_name)
+                        
+            logging.info(f"Found YouTube cookies: {', '.join(youtube_cookies)}")
+            
+        # Test with yt-dlp
+        test_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'cookiefile': cookie_file,
+            'extract_flat': True,
+            'skip_download': True,
+            'no_write_download_archive': True,
+            'no_cache_dir': True,
+        }
+        
+        with yt_dlp.YoutubeDL(test_opts) as ydl:
+            logging.info("Attempting to fetch video info with cookies...")
+            try:
+                # Try to extract just the title
+                result = ydl.extract_info(
+                    "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    download=False,
+                    process=False
+                )
+                if result and 'title' in result:
+                    logging.info(f"Successfully retrieved video title: {result.get('title')}")
+                    return True
+                else:
+                    logging.error("Failed to extract video info")
+                    return False
+            except Exception as e:
+                logging.error(f"Error during yt-dlp test: {str(e)}")
+                return False
+                
+    except Exception as e:
+        logging.error(f"Error testing cookies: {str(e)}")
+        return False
+
+# Add this to your code and call it when needed
+'''if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
+    cookie_file = "youtube_cookies.txt"  # Adjust path as needed
+    test_cookies(cookie_file)'''
+
+# GARBAGE
+
+'''def create_temp_cookie_file():
+    """Create a temporary copy of the cookie file with appropriate permissions."""
+    if not os.path.exists(COOKIE_FILE):
+        logging.error(f"Original cookie file {COOKIE_FILE} not found")
+        return None, None
+        
+    try:
+        # Create a temporary directory to store our cookie file
+        temp_dir = tempfile.mkdtemp(prefix='yt_cookies_')
+        temp_cookie_file = os.path.join(temp_dir, 'cookies.txt')
+        
+        # Copy the original cookie file to the temporary location
+        shutil.copy2(COOKIE_FILE, temp_cookie_file)
+        
+        # First make the file read/write for owner only
+        os.chmod(temp_cookie_file, stat.S_IRUSR | stat.S_IWUSR)
+        
+        # Create a backup of the original cookie file
+        cookie_backup = f"{COOKIE_FILE}.backup"
+        if not os.path.exists(cookie_backup):
+            shutil.copy2(COOKIE_FILE, cookie_backup)
+            logging.info(f"Created backup of original cookie file: {cookie_backup}")
+        
+        # Make both the original and temporary cookie files read-only
+        os.chmod(COOKIE_FILE, stat.S_IRUSR)
+        os.chmod(temp_cookie_file, stat.S_IRUSR)
+        
+        logging.info(f"Created temporary cookie file: {temp_cookie_file}")
+        return temp_cookie_file, temp_dir
+        
+    except Exception as e:
+        logging.error(f"Error creating temporary cookie file: {str(e)}")
+        if 'temp_dir' in locals() and temp_dir and os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
+        return None, None
+
+def cleanup_temp_cookie_file(temp_file, temp_dir):
+    """Clean up the temporary cookie file and its directory."""
+    try:
+        if temp_file and os.path.exists(temp_file):
+            # Make writable before deletion
+            os.chmod(temp_file, stat.S_IRUSR | stat.S_IWUSR)
+            os.remove(temp_file)
+            logging.info(f"Removed temporary cookie file: {temp_file}")
+        
+        if temp_dir and os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
+            logging.info(f"Removed temporary directory: {temp_dir}")
+            
+    except Exception as e:
+        logging.error(f"Error in cleanup_temp_cookie_file: {str(e)}")'''
