@@ -25,7 +25,7 @@ MAX_VIDEOS = Config.MAX_VIDEOS_TO_FETCH # app_config['max_videos_to_fetch']
 MAX_VIDEOS_FOR_SUBTITLES = Config.MAX_VIDEOS_FOR_SUBTITLES # app_config['max_videos_for_subtitles']
 OPENAI_MODEL = Config.OPENAI_MODEL # app_config['openai_model']
 MAX_TOKENS = Config.MAX_TOKENS # app_config['max_tokens']
-COOKIE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "youtube_cookies.txt")
+COOKIE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "auth/ytc.txt")
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -78,57 +78,6 @@ def extract_channel_id(url):
                 return None
     
     return None
-
-def get_video_data(video_id, include_comments=False):
-    output = []
-
-    try:
-        video_response = youtube.videos().list(
-            part="snippet,contentDetails,statistics",
-            id=video_id
-        ).execute()
-
-        for video in video_response['items']:
-            duration = video['contentDetails'].get('duration', 'PT0S')
-            try:
-                duration_seconds = isodate.parse_duration(duration).total_seconds()
-            except isodate.ISO8601Error:
-                duration_seconds = 0
-
-            subtitles = get_video_subtitles(video_id)
-
-            if subtitles:
-                logging.info(f"Retrieved subtitles for video: {video['snippet']['title']}")
-            else:
-                logging.warning(f"No subtitles available for video: {video['snippet']['title']}")
-                return None  # Return None if subtitles are not available
-
-            video_data = {
-                'title': video['snippet']['title'],
-                'description': video['snippet']['description'],
-                'length': int(duration_seconds),
-                'date_published': video['snippet']['publishedAt'],
-                'tags': video['snippet'].get('tags', []),
-                'youtube_video_id': video['id'],
-                'youtube_category_id': video['snippet'].get('categoryId', 'Unknown'),
-                'views': int(video['statistics'].get('viewCount', 0)),
-                'like_count': int(video['statistics'].get('likeCount', 0)),
-                'comment_count': int(video['statistics'].get('commentCount', 0)),
-                'thumbnail_url': video['snippet']['thumbnails']['default']['url'],
-                'channel_title': video['snippet']['channelTitle'],
-                'subtitles': subtitles
-            }
-
-            if include_comments:
-                video_data['top_comments'] = get_video_comments(video_id)
-
-            output.append(video_data)
-
-        return output
-
-    except Exception as e:
-        logging.error(f"Error in get_video_data for video {video_id}: {str(e)}")
-        return None
 
 def get_video_comments(video_id, max_results=100):
     comments = []
@@ -231,6 +180,57 @@ def get_channel_videos(channel_id, max_results):
 
     return videos[:max_results]
 
+def get_video_data(video_id, include_comments=False):
+    output = []
+
+    try:
+        video_response = youtube.videos().list(
+            part="snippet,contentDetails,statistics",
+            id=video_id
+        ).execute()
+
+        for video in video_response['items']:
+            duration = video['contentDetails'].get('duration', 'PT0S')
+            try:
+                duration_seconds = isodate.parse_duration(duration).total_seconds()
+            except isodate.ISO8601Error:
+                duration_seconds = 0
+
+            subtitles = get_video_subtitles(video_id)
+
+            if subtitles:
+                logging.info(f"Retrieved subtitles for video: {video['snippet']['title']}")
+            else:
+                logging.warning(f"No subtitles available for video: {video['snippet']['title']}")
+                return None  # Return None if subtitles are not available
+
+            video_data = {
+                'title': video['snippet']['title'],
+                'description': video['snippet']['description'],
+                'length': int(duration_seconds),
+                'date_published': video['snippet']['publishedAt'],
+                'tags': video['snippet'].get('tags', []),
+                'youtube_video_id': video['id'],
+                'youtube_category_id': video['snippet'].get('categoryId', 'Unknown'),
+                'views': int(video['statistics'].get('viewCount', 0)),
+                'like_count': int(video['statistics'].get('likeCount', 0)),
+                'comment_count': int(video['statistics'].get('commentCount', 0)),
+                'thumbnail_url': video['snippet']['thumbnails']['default']['url'],
+                'channel_title': video['snippet']['channelTitle'],
+                'subtitles': subtitles
+            }
+
+            if include_comments:
+                video_data['top_comments'] = get_video_comments(video_id)
+
+            output.append(video_data)
+
+        return output
+
+    except Exception as e:
+        logging.error(f"Error in get_video_data for video {video_id}: {str(e)}")
+        return None
+
 # ---
 # SUBTITLE FUNCTIONS
 # ---
@@ -273,7 +273,7 @@ def cleanup_temp_cookie_file(temp_file):
         except Exception as e:
             logging.warning(f"Error removing temporary cookie file: {str(e)}")
 
-def get_yt_dlp_opts():
+'''def get_yt_dlp_opts():
     """Get yt-dlp options with cookie file configuration."""
     temp_cookie_file = create_temp_cookie_file()
     if not temp_cookie_file:
@@ -289,7 +289,7 @@ def get_yt_dlp_opts():
         'referer': 'https://www.youtube.com/',
         'cookiefile': temp_cookie_file,
         'no_cache_dir': True
-    }
+    }'''
 
 def get_video_subtitles(video_id):
     """
@@ -298,6 +298,7 @@ def get_video_subtitles(video_id):
     Returns None if no subtitles are available.
     """
     video_url = f'https://www.youtube.com/watch?v={video_id}'
+
     temp_cookie_file = create_temp_cookie_file()
     
     if not temp_cookie_file:
@@ -306,15 +307,15 @@ def get_video_subtitles(video_id):
     
     try:
         # Validate cookies before proceeding
-        cookie_validator = CookieValidator(COOKIE_FILE)
-        is_valid, message = cookie_validator.check_status()
+        # cookie_validator = CookieValidator(COOKIE_FILE)
+        # is_valid, message = cookie_validator.check_status()
         
-        if not is_valid:
+        '''if not is_valid:
             logging.error(f"Cookie validation failed: {message}")
             # You could implement some notification system here
             # For now, just log it prominently
             logging.critical("ATTENTION: YouTube cookies need to be refreshed!")
-            return None
+            return None'''
 
         # Create yt-dlp options
         ydl_opts = {
