@@ -371,7 +371,7 @@ def get_yt_dlp_opts(temp_cookie_file, temp_dir):
         }
     }
 
-def get_video_subtitles(video_id):
+'''def get_video_subtitles(video_id):
     """Enhanced subtitle fetching with better error handling and retry logic."""
     video_url = f'https://www.youtube.com/watch?v={video_id}'
     cookie_manager = CookieManager(COOKIE_FILE)
@@ -447,7 +447,141 @@ def get_video_subtitles(video_id):
         
     finally:
         logging.info("=== Cleaning up ===")
+        cookie_manager.cleanup(temp_cookie_file, temp_dir)'''
+
+def get_video_subtitles(video_id):
+    """Multi-tiered approach to subtitle fetching with multiple fallbacks."""
+    logging.info(f"=== Starting subtitle extraction for video {video_id} ===")
+    
+    # Try all methods in sequence until one works
+    subtitle_text = (
+        try_youtube_transcript_api(video_id) or
+        try_yt_dlp_with_cookies(video_id) or
+        try_yt_dlp_no_cookies(video_id) or
+        try_direct_request(video_id)
+    )
+    
+    if subtitle_text:
+        return clean_subtitle_text(subtitle_text)
+    return None
+
+def try_youtube_transcript_api(video_id):
+    """Try getting transcripts using youtube_transcript_api first."""
+    try:
+        from youtube_transcript_api import YouTubeTranscriptApi
+        from youtube_transcript_api.formatters import TextFormatter
+        
+        logging.info("Attempting to fetch subtitles using YouTube Transcript API...")
+        
+        # Try multiple language variants
+        for lang in ['en', 'en-US', 'en-GB', 'a.en']:
+            try:
+                transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=[lang])
+                formatter = TextFormatter()
+                return formatter.format_transcript(transcript)
+            except Exception as e:
+                logging.debug(f"Failed to get {lang} transcript: {str(e)}")
+                continue
+                
+        return None
+    except Exception as e:
+        logging.warning(f"YouTube Transcript API attempt failed: {str(e)}")
+        return None
+
+def try_yt_dlp_with_cookies(video_id):
+    """Try yt-dlp with cookies approach."""
+    video_url = f'https://www.youtube.com/watch?v={video_id}'
+    cookie_manager = CookieManager(COOKIE_FILE)
+    temp_cookie_file, temp_dir = cookie_manager.create_temp_copy()
+    
+    if not temp_cookie_file:
+        return None
+        
+    try:
+        logging.info("Attempting to fetch subtitles using yt-dlp with cookies...")
+        with tempfile.TemporaryDirectory() as subtitles_temp_dir:
+            ydl_opts = {
+                'quiet': True,
+                'no_warnings': True,
+                'cookiefile': temp_cookie_file,
+                'writesubtitles': True,
+                'writeautomaticsub': True,
+                'subtitleslangs': ['en', 'en-US'],
+                'subtitlesformat': 'vtt',
+                'skip_download': True,
+                'outtmpl': os.path.join(subtitles_temp_dir, '%(id)s.%(ext)s'),
+                'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+                'referer': 'https://www.youtube.com/',
+                'http_headers': {
+                    'Accept-Language': 'en-US,en;q=0.5',
+                    'Sec-Fetch-Mode': 'navigate'
+                }
+            }
+            
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                try:
+                    ydl.download([video_url])
+                    for ext in ['.en.vtt', '.en-US.vtt']:
+                        subtitle_file = os.path.join(subtitles_temp_dir, f"{video_id}{ext}")
+                        if os.path.exists(subtitle_file):
+                            with open(subtitle_file, 'r', encoding='utf-8') as f:
+                                return f.read()
+                except:
+                    return None
+                    
+    finally:
         cookie_manager.cleanup(temp_cookie_file, temp_dir)
+    
+    return None
+
+def try_yt_dlp_no_cookies(video_id):
+    """Try yt-dlp without cookies."""
+    try:
+        logging.info("Attempting to fetch subtitles using yt-dlp without cookies...")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            ydl_opts = {
+                'quiet': True,
+                'writesubtitles': True,
+                'writeautomaticsub': True,
+                'subtitleslangs': ['en', 'en-US'],
+                'subtitlesformat': 'vtt',
+                'skip_download': True,
+                'outtmpl': os.path.join(temp_dir, '%(id)s.%(ext)s')
+            }
+            
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                try:
+                    url = f'https://www.youtube.com/watch?v={video_id}'
+                    ydl.download([url])
+                    for ext in ['.en.vtt', '.en-US.vtt']:
+                        subtitle_file = os.path.join(temp_dir, f"{video_id}{ext}")
+                        if os.path.exists(subtitle_file):
+                            with open(subtitle_file, 'r', encoding='utf-8') as f:
+                                return f.read()
+                except:
+                    return None
+    except Exception as e:
+        logging.warning(f"yt-dlp without cookies attempt failed: {str(e)}")
+        return None
+
+def try_direct_request(video_id):
+    """Try direct request to YouTube's subtitle endpoints."""
+    try:
+        logging.info("Attempting to fetch subtitles using direct request...")
+        # Try to get automatic captions first
+        url = f"https://www.youtube.com/api/timedtext?lang=en&v={video_id}"
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200 and response.text:
+            # Parse XML response
+            root = ET.fromstring(response.text)
+            texts = []
+            for text in root.findall('.//text'):
+                if text.text:
+                    texts.append(text.text)
+            return ' '.join(texts)
+    except Exception as e:
+        logging.warning(f"Direct request attempt failed: {str(e)}")
+        return None
 
 def get_subtitles_fallback(video_id):
     """Fallback method to get subtitles using alternative approach."""
