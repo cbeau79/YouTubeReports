@@ -327,7 +327,7 @@ class CookieManager:
             logging.error(f"Error in cleanup: {str(e)}")
 
 def get_yt_dlp_opts(temp_cookie_file, temp_dir):
-    """Get yt-dlp options with strict isolation."""
+    """Get yt-dlp options with strict isolation and production settings."""
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(temp_cookie_file)))
     return {
         'quiet': True,
@@ -345,16 +345,24 @@ def get_yt_dlp_opts(temp_cookie_file, temp_dir):
         'paths': {'home': base_dir},
         'cookiesfrombrowser': None,
         'no_config': True,
-        # Additional options to prevent file writing
         'no_write_playlist_metafiles': True,
         'no_write_comments': True,
         'no_write_info_json': True,
         'no_write_description': True,
         'no_write_thumbnail': True,
         'extract_flat': True,
-        # More isolation options
         'environ': {'HOME': base_dir, 'XDG_CONFIG_HOME': base_dir},
-        'cachedir': os.path.join(base_dir, 'cache')
+        'cachedir': os.path.join(base_dir, 'cache'),
+        # Add production-specific options
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+        'http_headers': {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+        },
+        'socket_timeout': 30,
+        'retries': 3
     }
 
 def get_video_subtitles(video_id):
@@ -375,13 +383,13 @@ def get_video_subtitles(video_id):
         else:
             logging.info("Original cookie file is moved out of the way")
             
-        '''cookie_validator = CookieValidator(temp_cookie_file)
+        cookie_validator = CookieValidator(temp_cookie_file)
         is_valid, message = cookie_validator.check_status()
         
         if not is_valid:
             logging.error(f"Cookie validation failed: {message}")
             logging.critical("ATTENTION: YouTube cookies need to be refreshed!")
-            return None'''
+            return None
 
         with tempfile.TemporaryDirectory() as subtitles_temp_dir:
             logging.info(f"Using subtitles temp dir: {subtitles_temp_dir}")
