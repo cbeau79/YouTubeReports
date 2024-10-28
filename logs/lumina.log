@@ -32,3 +32,4 @@
 2024-10-28 13:06:42,477 INFO: Parsing report data and creating database entries [in /Users/chrisbeaumont/Projects/YouTubeReports/app.py:521]
 2024-10-28 13:06:42,489 INFO: New report created with ID: 6 [in /Users/chrisbeaumont/Projects/YouTubeReports/app.py:540]
 2024-10-28 13:06:42,490 INFO: Redirecting to: /dashboard?new_report=6 [in /Users/chrisbeaumont/Projects/YouTubeReports/app.py:543]
+2024-10-28 13:19:58,515 INFO: Lumina startup [in /Users/chrisbeaumont/Projects/YouTubeReports/app.py:35]

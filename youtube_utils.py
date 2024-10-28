@@ -375,13 +375,13 @@ def get_video_subtitles(video_id):
         else:
             logging.info("Original cookie file is moved out of the way")
             
-        cookie_validator = CookieValidator(temp_cookie_file)
+        '''cookie_validator = CookieValidator(temp_cookie_file)
         is_valid, message = cookie_validator.check_status()
         
         if not is_valid:
             logging.error(f"Cookie validation failed: {message}")
             logging.critical("ATTENTION: YouTube cookies need to be refreshed!")
-            return None
+            return None'''
 
         with tempfile.TemporaryDirectory() as subtitles_temp_dir:
             logging.info(f"Using subtitles temp dir: {subtitles_temp_dir}")
