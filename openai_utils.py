@@ -31,19 +31,29 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 # report_data is a JSON formatted file containing channel data
 def generate_channel_report(channel_data):
     # Load JSON report template
-    with open('json_template_report.json') as f:
-        json_template_report = json.load(f)
+    try:
+        with open('json_template_report.json', 'r') as f:
+            json_template_report = json.load(f)
+    except Exception as e:
+        print(f"Error loading template: {e}")
+        return None
+
+    # Convert channel_data to JSON string if it's not already
+    if isinstance(channel_data, dict):
+        channel_data_str = json.dumps(channel_data, indent=2)
+    else:
+        channel_data_str = channel_data
 
     ## To debug the channel data, un-comment this
     # with open('channel_data_dump.json', 'w', encoding='utf-8') as f:
-    #     json.dump(channel_data, f, indent=2)
+    #     print(channel_data_str)
     
     # Craft the prompt
     prompt = f"""
     You are a YouTube content consultant. Analyze the following YouTube channel data and provide a comprehensive report that focuses on insight and understanding. The data is provided in JSON format:
 
     <channel_data>
-    {json.dump(channel_data, f, indent=2)}
+    {channel_data_str}
     </channel_data>
     
     Analyze the above data and present the key insights in the following format: 
@@ -139,14 +149,10 @@ def generate_channel_report(channel_data):
                 {"role": "system", "content": "You are a helpful YouTube content consultant who responds in JSON."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=4000
+            max_tokens=8000
         )
 
         returned_string = response.choices[0].message.content 
-        # json_data = json.loads(returned_string)
-        formated_string = returned_string.encode().decode('unicode_escape')
-        print(formated_string)
-
         return returned_string
     except Exception as e:
         print(f"An error occurred while generating the report: {e}")

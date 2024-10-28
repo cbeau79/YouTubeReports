@@ -1,0 +1,659 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- URL Input and Progress Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <!-- Input Panel -->
+        <div class="bg-zinc-50 shadow-md rounded px-8 pt-6 pb-8 mb-4 min-h-80">
+            <h2 class="text-xl text-zinc-700 font-bold mb-4">Analyze Content</h2>
+            <p class="pb-4">Enter a YouTube URL to generate an analysis. Works with both channel and video URLs.</p>
+            <form id="content-form" class="space-y-4">
+                <div>
+                    <label for="content-url" class="block text-zinc-700 text-sm mb-2">YouTube URL:</label>
+                    <input type="text" id="content-url" name="content-url" required 
+                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                           placeholder="https://youtube.com/...">
+                </div>
+                <button type="submit" class="bg-red-500 hover:bg-red-700 text-zinc-50 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full">
+                    Analyze Content
+                </button>
+            </form>
+        </div>
+
+        <!-- Progress Display Panel -->
+        <div class="relative bg-zinc-800 text-green-500 min-h-80 font-mono text-sm shadow-md rounded px-4 pt-4 pb-4 mb-4 h-64 overflow-y-auto">
+            <div class="grain absolute inset-0 opacity-50 mix-blend-multiply"></div>
+            <h2 class="text-xl font-bold mb-4 text-zinc-50">Progress Log</h2>
+            <div id="progress-log">
+                > Waiting for YouTube URL to begin ...
+            </div>
+        </div>
+    </div>
+
+    <!-- Reports Section Header -->
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl text-zinc-800 font-bold">Your Reports</h1>
+        <div class="flex items-center space-x-4">
+            <span class="text-zinc-600">View:</span>
+            <button id="grid-view" class="px-3 py-1 bg-red-500 text-white rounded-l-md">Grid</button>
+            <button id="list-view" class="px-3 py-1 bg-zinc-300 text-zinc-700 rounded-r-md">List</button>
+        </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="mb-6 flex justify-between items-center">
+        <div class="space-x-2">
+            <button class="bg-red-500 text-white px-4 py-2 rounded" onclick="filterReports('all')">All</button>
+            <button class="bg-blue-500 text-white px-4 py-2 rounded" onclick="filterReports('channel')">Channel Reports</button>
+            <button class="bg-green-500 text-white px-4 py-2 rounded" onclick="filterReports('video')">Video Summaries</button>
+        </div>
+        <div>
+            <input type="text" id="search-input" placeholder="Search reports..." class="border rounded px-4 py-2">
+        </div>
+    </div>
+
+    <!-- Grid View -->
+    <div id="grid-view-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for item in combined_data %}
+            <div class="report-card bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 {% if item.type == 'channel_report' %}channel-report{% else %}video-summary{% endif %} cursor-pointer" 
+                 style="aspect-ratio: 16/9;" 
+                 data-id="{{ item.item.id }}">
+                {% if item.type == 'channel_report' %}
+                    {% set raw_data = item.item.raw_channel_data | from_json %}
+                    <div class="relative h-full bg-cover bg-center" style="background-image: url('{{ raw_data.banner_url }}=w2120-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj');">
+                        <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+                        <div class="absolute inset-0 p-4 flex flex-col justify-between">
+                            <div class="flex items-center">
+                                <img src="{{ raw_data.avatar_url }}" alt="{{ item.item.channel_title }} avatar" class="w-10 h-10 rounded-full mr-3">
+                                <h3 class="text-lg font-semibold text-white truncate">{{ item.item.channel_title }}</h3>
+                            </div>
+                            <div>
+                                <p class="text-sm text-zinc-200 mb-2">Generated: {{ item.date_created.strftime('%Y-%m-%d %I:%M %p') }}</p>
+                                <button onclick="viewReport('{{ item.type }}', '{{ item.item.id }}')" 
+                                        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded w-full transition-colors duration-300">
+                                    View Report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    {% set raw_data = item.item.raw_video_data | from_json %}
+                    {% set high_res_thumbnail = raw_data.thumbnail_url | replace("default.jpg", "maxresdefault.jpg") %}
+                    <div class="relative h-full bg-cover bg-center" style="background-image: url('{{ high_res_thumbnail }}');">
+                        <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+                        <div class="absolute inset-0 p-4 flex flex-col justify-between">
+                            <h3 class="text-lg font-semibold text-white truncate">{{ item.item.video_title }}</h3>
+                            <div>
+                                <p class="text-sm text-zinc-200 mb-2">Generated: {{ item.date_created.strftime('%Y-%m-%d %I:%M %p') }}</p>
+                                <button onclick="viewReport('{{ item.type }}', '{{ item.item.id }}')" 
+                                        class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded w-full transition-colors duration-300">
+                                    View Summary
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- List View -->
+    <div id="list-view-container" class="hidden space-y-4">
+        {% for item in combined_data %}
+        <div class="report-item bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 {% if item.type == 'channel_report' %}channel-report{% else %}video-summary{% endif %}">
+            <div class="p-4 flex justify-between items-center">
+                <div class="flex items-center">
+                    {% if item.type == 'channel_report' %}
+                        {% set raw_data = item.item.raw_channel_data | from_json %}
+                        <img src="{{ raw_data.avatar_url }}" alt="{{ item.item.channel_title }} avatar" class="w-10 h-10 rounded-full mr-3">
+                        <div>
+                            <h3 class="text-lg font-semibold text-zinc-800">{{ item.item.channel_title }}</h3>
+                            <p class="text-sm text-zinc-600">Generated: {{ item.date_created.strftime('%Y-%m-%d %I:%M %p') }}</p>
+                        </div>
+                    {% else %}
+                        {% set raw_data = item.item.raw_video_data | from_json %}
+                        {% set high_res_thumbnail = raw_data.thumbnail_url | replace("default.jpg", "maxresdefault.jpg") %}
+                        <img src="{{ high_res_thumbnail }}" alt="{{ item.item.video_title }} thumbnail" class="w-32 h-18 object-cover rounded mr-3">
+                        <div>
+                            <h3 class="text-lg font-semibold text-zinc-800">{{ item.item.video_title }}</h3>
+                            <p class="text-sm text-zinc-600">Generated: {{ item.date_created.strftime('%Y-%m-%d %I:%M %p') }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <button onclick="viewReport('{{ item.type }}', '{{ item.item.id }}')" 
+                        class="{% if item.type == 'channel_report' %}bg-blue-500 hover:bg-blue-600{% else %}bg-green-500 hover:bg-green-600{% endif %} text-white font-bold py-2 px-4 rounded transition-colors duration-300">
+                    View {{ 'Report' if item.type == 'channel_report' else 'Summary' }}
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Report/Summary Modal -->
+    <div id="report-modal" class="modal-overlay fixed inset-0 bg-zinc-600 bg-opacity-50 hidden overflow-y-auto h-full w-full">
+        <div class="modal-container relative top-20 mx-auto p-5 border w-11/12 xl:w-3/4 2xl:w-2/3 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="mt-2 px-7 py-3">
+                    <div id="modal-content" class="text-left"></div>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button id="close-modal" class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+// Global state
+let messageQueue = [];
+let isTyping = false;
+
+// Initialize all components when document is ready
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Initializing dashboard components...');
+    initializeContentForm();
+    initializeViewToggles();
+    initializeSearchAndFilters();
+    initializeModal();
+    initializeReportCards();
+    openNewItemModal();
+});
+
+function initializeContentForm() {
+    console.log('Initializing content form');
+    const form = document.getElementById('content-form');
+    const progressLog = document.getElementById('progress-log');
+    
+    if (!form || !progressLog) {
+        console.error('Required elements not found');
+        return;
+    }
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        console.log('Form submitted');
+        
+        const url = document.getElementById('content-url').value;
+        console.log('Processing URL:', url);
+        
+        // Clear previous messages
+        progressLog.innerHTML = '';
+        messageQueue = [];
+        addToMessageQueue('Starting analysis...');
+
+        try {
+            const response = await fetch('/process_url', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({url: url})
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const {done, value} = await reader.read();
+                
+                if (done) {
+                    console.log('Stream complete');
+                    if (buffer) {
+                        processChunk(buffer);
+                    }
+                    break;
+                }
+
+                buffer += decoder.decode(value, {stream: true});
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+
+                for (const line of lines) {
+                    if (line.trim()) {
+                        processChunk(line);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            addToMessageQueue(`Error: ${error.message}`);
+        }
+    });
+}
+
+function processChunk(line) {
+    try {
+        const data = JSON.parse(line);
+        console.log('Received data:', data);
+
+        switch (data.type) {
+            case 'progress':
+                addToMessageQueue(data.message);
+                break;
+            case 'error':
+                addToMessageQueue(`Error: ${data.message}`);
+                break;
+            case 'complete':
+                addToMessageQueue('Analysis complete. Redirecting...');
+                setTimeout(() => {
+                    window.location.href = data.redirect_url;
+                }, 1500);
+                break;
+            default:
+                console.log('Unknown message type:', data.type);
+        }
+    } catch (e) {
+        console.error('Error parsing JSON:', e);
+        console.error('Problematic line:', line);
+    }
+}
+
+function addToMessageQueue(message) {
+    console.log('Adding message to queue:', message);
+    messageQueue.push(message);
+    if (!isTyping) {
+        typeNextMessage();
+    }
+}
+
+function typeNextMessage() {
+    if (messageQueue.length === 0) {
+        isTyping = false;
+        return;
+    }
+
+    isTyping = true;
+    const message = messageQueue.shift();
+    const logEntry = document.createElement('div');
+    logEntry.className = 'log-entry';
+    logEntry.innerHTML = `> <span class="vidiprinter"></span>`;
+    document.getElementById('progress-log').appendChild(logEntry);
+    
+    typeVidiprinter(logEntry.querySelector('.vidiprinter'), message, () => {
+        document.getElementById('progress-log').scrollTop = document.getElementById('progress-log').scrollHeight;
+        setTimeout(typeNextMessage, 50);
+    });
+}
+
+function typeVidiprinter(element, text, onComplete, index = 0) {
+    if (index < text.length) {
+        element.textContent += text[index];
+        setTimeout(() => typeVidiprinter(element, text, onComplete, index + 1), 10);
+    } else {
+        onComplete();
+    }
+}
+
+function initializeViewToggles() {
+    console.log('Initializing view toggles');
+    const gridViewBtn = document.getElementById('grid-view');
+    const listViewBtn = document.getElementById('list-view');
+    const gridViewContainer = document.getElementById('grid-view-container');
+    const listViewContainer = document.getElementById('list-view-container');
+
+    if (!gridViewBtn || !listViewBtn || !gridViewContainer || !listViewContainer) {
+        console.error('View toggle elements not found');
+        return;
+    }
+
+    gridViewBtn.addEventListener('click', () => {
+        gridViewBtn.classList.remove('bg-zinc-300', 'text-zinc-700');
+        gridViewBtn.classList.add('bg-red-500', 'text-white');
+        listViewBtn.classList.remove('bg-red-500', 'text-white');
+        listViewBtn.classList.add('bg-zinc-300', 'text-zinc-700');
+        gridViewContainer.classList.remove('hidden');
+        listViewContainer.classList.add('hidden');
+    });
+
+    listViewBtn.addEventListener('click', () => {
+        listViewBtn.classList.remove('bg-zinc-300', 'text-zinc-700');
+        listViewBtn.classList.add('bg-red-500', 'text-white');
+        gridViewBtn.classList.remove('bg-red-500', 'text-white');
+        gridViewBtn.classList.add('bg-zinc-300', 'text-zinc-700');
+        listViewContainer.classList.remove('hidden');
+        gridViewContainer.classList.add('hidden');
+    });
+}
+
+function initializeSearchAndFilters() {
+    console.log('Initializing search and filters');
+    const searchInput = document.getElementById('search-input');
+    
+    if (!searchInput) {
+        console.error('Search input not found');
+        return;
+    }
+
+    searchInput.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const items = document.querySelectorAll('.report-card, .report-item');
+        items.forEach(item => {
+            const title = item.querySelector('h3').textContent.toLowerCase();
+            item.style.display = title.includes(searchTerm) ? '' : 'none';
+        });
+    });
+}
+
+function filterReports(type) {
+    console.log('Filtering reports:', type);
+    const items = document.querySelectorAll('.report-card, .report-item');
+    items.forEach(item => {
+        if (type === 'all' || 
+            (type === 'channel' && item.classList.contains('channel-report')) || 
+            (type === 'video' && item.classList.contains('video-summary'))) {
+            item.style.display = '';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+function initializeModal() {
+    console.log('Initializing modal');
+    const closeModalButton = document.getElementById('close-modal');
+    const reportModal = document.getElementById('report-modal');
+
+    if (!closeModalButton || !reportModal) {
+        console.error('Modal elements not found');
+        return;
+    }
+
+    closeModalButton.addEventListener('click', () => {
+        console.log('Close button clicked');
+        closeModal();
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && !reportModal.classList.contains('hidden')) {
+            console.log('Escape key pressed');
+            closeModal();
+        }
+    });
+
+    reportModal.addEventListener('click', function(event) {
+        if (event.target === reportModal) {
+            console.log('Modal overlay clicked');
+            closeModal();
+        }
+    });
+}
+
+function initializeReportCards() {
+    console.log('Initializing report card click handlers');
+    document.querySelectorAll('.report-card, .report-item').forEach(element => {
+        element.addEventListener('click', function() {
+            const type = this.classList.contains('channel-report') ? 'channel_report' : 'video_summary';
+            const id = this.getAttribute('data-id');
+            viewReport(type, id);
+        });
+    });
+}
+
+function closeModal() {
+    console.log('Closing modal');
+    const modal = document.getElementById('report-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    } else {
+        console.error('Modal element not found');
+    }
+}
+
+function viewReport(type, id) {
+    console.log(`Opening ${type} with ID: ${id}`);
+    let url = type === 'channel_report' ? `/report/${id}` : `/summary/${id}`;
+    fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            const modalContent = document.getElementById('modal-content');
+            const modal = document.getElementById('report-modal');
+            
+            if (!modalContent || !modal) {
+                throw new Error('Modal elements not found');
+            }
+            
+            if (type === 'channel_report') {
+                displayReport(data, modalContent);
+            } else {
+                displaySummary(data, modalContent);
+            }
+            
+            modal.classList.remove('hidden');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(`Failed to load ${type}: ${error.message}`);
+        });
+}
+
+function openNewItemModal() {
+    console.log('Checking for new items to display');
+    const urlParams = new URLSearchParams(window.location.search);
+    const newReportId = urlParams.get('new_report');
+    const newSummaryId = urlParams.get('new_summary');
+    
+    if (newReportId) {
+        viewReport('channel_report', newReportId);
+    } else if (newSummaryId) {
+        viewReport('video_summary', newSummaryId);
+    }
+}
+
+// Report display functions
+function displayReport(data, container) {
+    console.log('Displaying report:', data);
+    const report = data.report;
+    const raw_data = data.raw_channel_data;
+    const categorization = data.categorization;
+
+    let content = '';
+
+    if (raw_data) {
+        const createTags = (items, bgColor) => items.slice(0, 3).map(item => 
+            `<span class="inline-block ${bgColor} text-white text-xs px-2 py-1 rounded-full mx-1">${item}</span>`
+        ).join('');
+
+        const infoItems = [];
+        if (raw_data.subscriber_count) infoItems.push(`${raw_data.subscriber_count} subscribers`);
+        if (raw_data.total_video_count) infoItems.push(`${raw_data.total_video_count} videos`);
+        
+        if (categorization && categorization.content_categories.length > 0) {
+            infoItems.push(`${createTags(categorization.content_categories, 'bg-blue-500')}`);
+        }
+        
+        if (categorization && categorization.video_formats.length > 0) {
+            infoItems.push(`${createTags(categorization.video_formats, 'bg-green-500')}`);
+        }
+
+        const infoString = infoItems.join(' • ');
+
+        content += `
+            <div class="mb-6">
+                ${raw_data.banner_url ? `<img src="${raw_data.banner_url}=w2120-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj" alt="Channel Banner" class="w-full h-32 object-cover rounded-t-lg">` : ''}
+                <div class="bg-zinc-100 p-4 rounded-b-lg">
+                    <div class="flex items-center">
+                        ${raw_data.avatar_url ? `<img src="${raw_data.avatar_url}" alt="Channel Avatar" class="w-16 h-16 rounded-full mr-4">` : ''}
+                        <div class="flex-grow">
+                            <h2 class="text-2xl font-bold">${raw_data.title || 'Channel Report'}</h2>
+                            <p class="text-zinc-600 text-sm mt-1 flex flex-wrap items-center">${infoString}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        let mostViewedVideo = null;
+        if (raw_data.videos && raw_data.videos.length > 0) {
+            mostViewedVideo = raw_data.videos.reduce((prev, current) => 
+                (prev.views > current.views) ? prev : current
+            );
+        }
+
+        content += `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <h3 class="text-xl font-semibold mb-2">Channel Trailer</h3>
+                    <div class="relative" style="padding-top: 56.25%;">
+                        ${raw_data.trailer_video_id 
+                            ? `<iframe src="https://www.youtube.com/embed/${raw_data.trailer_video_id}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen class="absolute top-0 left-0 w-full h-full"></iframe>`
+                            : `<div class="absolute top-0 left-0 w-full h-full bg-zinc-200 flex items-center justify-center">No trailer available</div>`
+                        }
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold mb-2">Most Viewed Recent Video</h3>
+                    <div class="relative" style="padding-top: 56.25%;">
+                        ${mostViewedVideo
+                            ? `<iframe src="https://www.youtube.com/embed/${mostViewedVideo.youtube_video_id}" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen class="absolute top-0 left-0 w-full h-full"></iframe>`
+                            : `<div class="absolute top-0 left-0 w-full h-full bg-zinc-200 flex items-center justify-center">No video data available</div>`
+                        }
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    content += `<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">`;
+
+    if (report && report.consultation_report && report.consultation_report.sections) {
+        const sections = report.consultation_report.sections;
+        
+        content += `
+            <div class="report-column">
+                ${displaySection(sections[0], 'Executive Summary')}
+                ${displaySection(sections[1], 'Key Metrics')}
+                ${displaySection(sections[4], 'Recommendations')}
+            </div>
+            <div class="report-column">
+                ${displaySection(sections[2], 'Trends')}
+                ${displaySection(sections[3], 'Oratory Style')}
+                ${displaySection(sections[5], 'Limitations', true)}
+            </div>
+        `;
+    } else {
+        content += `<p class="col-span-2 text-red-500">Error: Report data is incomplete or missing.</p>`;
+    }
+
+    content += `</div>`;
+
+    container.innerHTML = content;
+}
+
+function displaySection(section, title, isSimple = false) {
+    if (!section || !section.content) {
+        return '';
+    }
+
+    let sectionContent = '';
+    if (isSimple) {
+        sectionContent = `<p class="report-text">${section.content}</p>`;
+    } else {
+        sectionContent = section.content[0].sections.map(subsection => `
+            <div class="mb-4">
+                <h4 class="font-semibold text-base lg:text-lg mb-2">${subsection.subtitle}</h4>
+                <p class="report-text">${subsection.content}</p>
+            </div>
+        `).join('');
+    }
+
+    return `
+        <div class="report-panel bg-zinc-100 p-4 rounded-lg">
+            <h3 class="text-xl lg:text-2xl font-semibold mb-4">${title}</h3>
+            <div class="report-panel-content">
+                ${sectionContent}
+            </div>
+        </div>
+    `;
+}
+
+function displaySummary(data, container) {
+    const summary = data.summary;
+    container.innerHTML = `
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2">
+                <div class="report-panel bg-zinc-100 p-4 rounded-lg mb-4">
+                    <h3 class="text-xl lg:text-2xl font-semibold mb-4">Video</h3>
+                    <div class="report-panel-content">
+                        <div class="relative" style="padding-bottom: 56.25%;">
+                            <iframe 
+                                src="https://www.youtube.com/embed/${data.video_id}" 
+                                frameborder="0" 
+                                allow="autoplay; encrypted-media" 
+                                allowfullscreen
+                                class="absolute top-0 left-0 w-full h-full"
+                            ></iframe>
+                        </div>
+                        <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+                            <p class="report-text"><strong>Views:</strong> ${summary.video_views}</p>
+                            <p class="report-text"><strong>Likes:</strong> ${data.raw_data.like_count}</p>
+                            <p class="report-text"><strong>Comments:</strong> ${data.raw_data.comment_count}</p>
+                            <p class="report-text"><strong>Published:</strong> ${new Date(data.raw_data.date_published).toLocaleDateString()}</p>
+                        </div>
+                    </div>
+                </div>
+                ${displaySummarySection('Overview', `<p class="report-text">${summary.overview}</p>`)}
+                ${displaySummarySection('Key Points', `
+                    <ul class="list-disc pl-5 report-text">
+                        ${summary.key_points.map(point => `
+                            <li class="mb-2">
+                                <strong>${point.point_title}</strong>: ${point.point_description}
+                            </li>
+                        `).join('')}
+                    </ul>
+                `)}
+            </div>
+            <div>
+                ${displaySummarySection('Engagement Analysis', `<p class="report-text">${summary.engagement_analysis}</p>`)}
+                ${displaySummarySection('Target Audience', `<p class="report-text">${summary.target_audience}</p>`)}
+                ${displaySummarySection('Discourse', `<p class="report-text mb-2">${summary.discourse_summary}</p>
+                    <ul class="list-disc pl-5 report-text">
+                        ${summary.discourse_themes.map(theme => `
+                            <li class="mb-2">
+                                <strong>${theme.theme_title}</strong>: ${theme.theme_description}
+                            </li>
+                        `).join('')}
+                    </ul>
+                `)}
+                ${displaySummarySection('Improvement Suggestions', `
+                    <ul class="list-disc pl-5 report-text">
+                        ${summary.improvement_suggestions.map(suggestion => `
+                            <li class="mb-2">
+                                <strong>${suggestion.improvement_title}</strong>: ${suggestion.improvement_description}
+                            </li>
+                        `).join('')}
+                    </ul>
+                `)}
+            </div>
+        </div>
+    `;
+}
+
+function displaySummarySection(title, content) {
+    return `
+        <div class="report-panel bg-zinc-100 p-4 rounded-lg mb-4">
+            <h3 class="text-xl lg:text-2xl font-semibold mb-4">${title}</h3>
+            <div class="report-panel-content">
+                ${content}
+            </div>
+        </div>
+    `;
+}
+
+</script>
+
+{% endblock %}

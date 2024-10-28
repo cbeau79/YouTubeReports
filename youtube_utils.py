@@ -33,12 +33,16 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %
 youtube = googleapiclient.discovery.build("youtube", "v3", developerKey=API_KEY)
 
 def extract_channel_id(url):
+    """
+    Extract channel ID from a YouTube channel URL only.
+    Returns None for video URLs or invalid URLs.
+    """
     parsed_url = urlparse(url)
     
     if 'youtube.com' in parsed_url.netloc or 'youtu.be' in parsed_url.netloc:
         path = parsed_url.path
-        query = parse_qs(parsed_url.query)
         
+        # Only handle direct channel URL patterns
         if path.startswith('/@'):
             # Handle @username format
             username = path[2:]  # Remove the leading '/@'
@@ -52,23 +56,13 @@ def extract_channel_id(url):
                 if 'items' in channel_response and channel_response['items']:
                     return channel_response['items'][0]['snippet']['channelId']
             except Exception as e:
-                print(f"Error fetching channel ID for @{username}: {e}")
+                logging.error(f"Error fetching channel ID for @{username}: {e}")
                 return None
         elif path.startswith('/channel/'):
+            # Direct channel ID format
             return path.split('/')[2]
-        elif 'v' in query:
-            video_id = query['v'][0]
-            try:
-                video_response = youtube.videos().list(
-                    part="snippet",
-                    id=video_id
-                ).execute()
-                if 'items' in video_response:
-                    return video_response['items'][0]['snippet']['channelId']
-            except Exception as e:
-                print(f"Error fetching channel ID for video {video_id}: {e}")
-                return None
         elif path.startswith('/c/') or path.startswith('/user/'):
+            # Custom URL format
             custom_name = path.split('/')[2]
             try:
                 channel_response = youtube.search().list(
@@ -80,7 +74,7 @@ def extract_channel_id(url):
                 if 'items' in channel_response and channel_response['items']:
                     return channel_response['items'][0]['snippet']['channelId']
             except Exception as e:
-                print(f"Error fetching channel ID for {custom_name}: {e}")
+                logging.error(f"Error fetching channel ID for {custom_name}: {e}")
                 return None
     
     return None

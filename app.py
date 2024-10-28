@@ -269,6 +269,9 @@ def serve_image(filename):
 
 @app.route('/')
 def index():
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    
     return render_template('index.html')
 
 @app.route('/analyze')
@@ -300,55 +303,6 @@ def account():
             return redirect(url_for('index'))
     
     return render_template('account.html', user=current_user)
-
-@app.route('/reports')
-@login_required
-def reports():
-    # Fetch user's channel report accesses
-    user_report_accesses = UserReportAccess.query.filter_by(user_id=current_user.id).order_by(UserReportAccess.date_accessed.desc()).all()
-    
-    # Fetch video summaries for the current user
-    user_video_accesses = UserVideoAccess.query.filter_by(user_id=current_user.id).order_by(UserVideoAccess.date_accessed.desc()).all()
-    
-    combined_data = []
-    
-    # Process channel reports
-    for access in user_report_accesses:
-        combined_data.append({
-            'type': 'channel_report',
-            'item': access.report,
-            'date_accessed': access.date_accessed,
-            'date_created': access.report.date_created
-        })
-    
-    # Process video summaries
-    for access in user_video_accesses:
-        combined_data.append({
-            'type': 'video_summary',
-            'item': access.summary,
-            'date_accessed': access.date_accessed,
-            'date_created': access.summary.date_created
-        })
-    
-    # Sort combined data by date accessed, most recent first
-    combined_data.sort(key=lambda x: x['date_created'], reverse=True)
-    
-    # Check for new report or summary
-    new_report_id = request.args.get('new_report')
-    new_summary_id = request.args.get('new_summary')
-    
-    # If there's a new report or summary, get its data
-    new_item = None
-    if new_report_id:
-        new_item = next((item for item in combined_data if item['type'] == 'channel_report' and str(item['item'].id) == new_report_id), None)
-    elif new_summary_id:
-        new_item = next((item for item in combined_data if item['type'] == 'video_summary' and str(item['item'].id) == new_summary_id), None)
-    
-    return render_template('reports.html', 
-                           combined_data=combined_data, 
-                           new_item=new_item, 
-                           new_report_id=new_report_id, 
-                           new_summary_id=new_summary_id)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -405,7 +359,7 @@ If you did not make this request then simply ignore this email and no changes wi
 @app.route("/reset_password", methods=['GET', 'POST'])
 def reset_request():
     if current_user.is_authenticated:
-        return redirect(url_for('reports'))
+        return redirect(url_for('dashboard'))
     if request.method == 'POST':
         email = request.form.get('email')
         user = User.query.filter_by(email=email).first()
@@ -418,7 +372,7 @@ def reset_request():
 @app.route("/reset_password/<token>", methods=['GET', 'POST'])
 def reset_token(token):
     if current_user.is_authenticated:
-        return redirect(url_for('reports'))
+        return redirect(url_for('dashboard'))
     user = User.verify_reset_token(token)
     if user is None:
         flash('That is an invalid or expired token', 'warning')
@@ -452,7 +406,7 @@ def login():
         if user and user.check_password(password):
             login_user(user)
             app.logger.debug("Login successful")
-            return redirect(url_for('reports'))
+            return redirect(url_for('dashboard'))
         else:
             app.logger.debug("Invalid email or password")
             flash('Invalid email or password')
@@ -477,91 +431,264 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
-@app.route('/analyze_channel', methods=['POST'])
+@app.route('/process_url', methods=['POST'])
 @login_required
-def analyze_channel():
+def process_url():
     def generate():
         try:
+            app.logger.info("Starting /process_url endpoint")
+            
+            # Log the incoming request
             data = request.get_json()
-            if not data or 'channel_url' not in data:
-                yield json.dumps({'error': 'Invalid request. Please provide a channel_url.'}) + '\n'
+            app.logger.info(f"Received request data: {data}")
+            
+            if not data or 'url' not in data:
+                app.logger.error("Invalid request: Missing URL")
+                yield json.dumps({'type': 'error', 'message': 'Invalid request. Please provide a URL.'}) + '\n'
                 return
 
-            channel_url = data['channel_url']
-            yield json.dumps({'progress': 'Extracting channel ID '}) + '\n'
-            channel_id = extract_channel_id(channel_url)
+            url = data['url']
+            app.logger.info(f"Processing URL: {url}")
+            yield json.dumps({'type': 'progress', 'message': 'Analyzing URL type...'}) + '\n'
 
-            if not channel_id:
-                yield json.dumps({'error': 'Invalid YouTube channel URL'}) + '\n'
-                return
+            # Try to extract channel ID first
+            app.logger.info("Attempting to extract channel ID")
+            channel_id = extract_channel_id(url)
+            app.logger.info(f"Channel ID extraction result: {channel_id}")
             
-            yield json.dumps({'progress': f'Channel ID: {channel_id}'}) + '\n'
+            if channel_id:
+                app.logger.info(f"Processing as channel. Channel ID: {channel_id}")
+                yield json.dumps({'type': 'progress', 'message': 'Channel URL detected. Processing channel analysis...'}) + '\n'
+                
+                # Check for existing report
+                existing_report = ChannelReport.query.filter_by(channel_id=channel_id).first()
+                app.logger.info(f"Existing report found: {existing_report is not None}")
+                
+                if existing_report:
+                    app.logger.info(f"Found existing report for channel {channel_id}")
+                    yield json.dumps({'type': 'progress', 'message': 'Existing report found. Retrieving data...'}) + '\n'
+                    
+                    # Create or update user access
+                    user_access = UserReportAccess.query.filter_by(
+                        user_id=current_user.id, 
+                        report_id=existing_report.id
+                    ).first()
+                    
+                    if not user_access:
+                        app.logger.info("Creating new user access for existing report")
+                        user_access = UserReportAccess(
+                            user_id=current_user.id, 
+                            report_id=existing_report.id
+                        )
+                        db.session.add(user_access)
+                    else:
+                        app.logger.info("Updating existing user access timestamp")
+                        user_access.date_accessed = get_local_time()
+                    
+                    db.session.commit()
+                    
+                    redirect_url = url_for('dashboard', new_report=existing_report.id)
+                    app.logger.info(f"Redirecting to: {redirect_url}")
+                    yield json.dumps({
+                        'type': 'complete',
+                        'redirect_url': redirect_url
+                    }) + '\n'
+                    return
 
-            # Check if a fresh report exists
-            existing_report = ChannelReport.query.filter_by(channel_id=channel_id).first()
-            
-            if existing_report:
-                yield json.dumps({'progress': 'Existing report found. Retrieving data '}) + '\n'
-                report_data = json.loads(existing_report.report_data)
-                channel_data = json.loads(existing_report.raw_channel_data)
-                channel_title = channel_data.get('title', 'Unknown Channel')
-            else:
-                yield json.dumps({'progress': 'Fetching channel data from YouTube '}) + '\n'
+                # Generate new report
+                app.logger.info("Fetching channel data for new report")
+                yield json.dumps({'type': 'progress', 'message': 'Fetching channel data from YouTube...'}) + '\n'
                 channel_data = fetch_channel_data(channel_id)
 
                 if not channel_data:
-                    yield json.dumps({'error': 'Unable to fetch channel data'}) + '\n'
+                    app.logger.error("Failed to fetch channel data")
+                    yield json.dumps({'type': 'error', 'message': 'Unable to fetch channel data'}) + '\n'
                     return
 
                 channel_title = channel_data.get('title', 'Unknown Channel')
-                yield json.dumps({'progress': f'Analyzing channel: {channel_title}'}) + '\n'
+                app.logger.info(f"Channel title: {channel_title}")
+                yield json.dumps({'type': 'progress', 'message': f'Analyzing channel: {channel_title}'}) + '\n'
 
-                yield json.dumps({'progress': 'Generating report (can take a minute) '}) + '\n'
+                app.logger.info("Generating channel report")
+                yield json.dumps({'type': 'progress', 'message': 'Generating report...'}) + '\n'
                 report_json = generate_channel_report(channel_data)
 
                 if not report_json:
-                    yield json.dumps({'error': 'Failed to generate channel report'}) + '\n'
+                    app.logger.error("Failed to generate channel report")
+                    yield json.dumps({'type': 'error', 'message': 'Failed to generate channel report'}) + '\n'
                     return
 
+                app.logger.info("Parsing report data and creating database entries")
                 report_data = json.loads(report_json)
-                
-                # Extract categorization data
                 categorization = report_data['consultation_report']['categorisation'][0]
 
                 # Create new report
-                existing_report = ChannelReport(
+                new_report = ChannelReport(
                     channel_id=channel_id,
                     channel_title=channel_title,
                     report_data=report_json,
                     raw_channel_data=json.dumps(channel_data)
                 )
-                existing_report.set_categorization(categorization)
-                db.session.add(existing_report)
-                db.session.commit()
+                new_report.set_categorization(categorization)
+                db.session.add(new_report)
+                db.session.flush()
 
-            # Create or update UserReportAccess
-            user_access = UserReportAccess.query.filter_by(user_id=current_user.id, report_id=existing_report.id).first()
-            if not user_access:
-                user_access = UserReportAccess(user_id=current_user.id, report_id=existing_report.id)
+                # Create user access
+                user_access = UserReportAccess(user_id=current_user.id, report_id=new_report.id)
                 db.session.add(user_access)
-            else:
-                user_access.date_accessed = get_local_time()
-            db.session.commit()
+                db.session.commit()
+                app.logger.info(f"New report created with ID: {new_report.id}")
 
-            yield json.dumps({'progress': 'Report retrieved and added to your reports.'}) + '\n'
-            yield json.dumps({
-                'report': report_data,
-                'report_id': existing_report.id,
-                'channel_title': channel_title,
-                'avatar_url': channel_data['avatar_url'],
-                'redirect_url': url_for('reports', new_report=existing_report.id)
-            }) + '\n'
+                redirect_url = url_for('dashboard', new_report=new_report.id)
+                app.logger.info(f"Redirecting to: {redirect_url}")
+                yield json.dumps({
+                    'type': 'complete',
+                    'redirect_url': redirect_url
+                }) + '\n'
+
+            else:
+                # Try to process as video
+                app.logger.info("Attempting to process as video URL")
+                video_id = extract_video_id(url)
+                app.logger.info(f"Video ID extraction result: {video_id}")
+                
+                if not video_id:
+                    app.logger.error("Invalid YouTube URL - not a channel or video URL")
+                    yield json.dumps({'type': 'error', 'message': 'Invalid YouTube URL'}) + '\n'
+                    return
+
+                yield json.dumps({'type': 'progress', 'message': 'Video URL detected. Processing video analysis...'}) + '\n'
+
+                # Check for existing summary
+                existing_summary = VideoSummary.query.filter_by(video_id=video_id).first()
+                app.logger.info(f"Existing summary found: {existing_summary is not None}")
+                
+                if existing_summary:
+                    app.logger.info(f"Found existing summary for video {video_id}")
+                    yield json.dumps({'type': 'progress', 'message': 'Existing summary found. Retrieving data...'}) + '\n'
+                    
+                    # Create or update user access
+                    user_access = UserVideoAccess.query.filter_by(
+                        user_id=current_user.id, 
+                        summary_id=existing_summary.id
+                    ).first()
+                    
+                    if not user_access:
+                        app.logger.info("Creating new user access for existing summary")
+                        user_access = UserVideoAccess(
+                            user_id=current_user.id, 
+                            summary_id=existing_summary.id
+                        )
+                        db.session.add(user_access)
+                    else:
+                        app.logger.info("Updating existing user access timestamp")
+                        user_access.date_accessed = get_local_time()
+                    
+                    db.session.commit()
+                    
+                    redirect_url = url_for('dashboard', new_summary=existing_summary.id)
+                    app.logger.info(f"Redirecting to: {redirect_url}")
+                    yield json.dumps({
+                        'type': 'complete',
+                        'redirect_url': redirect_url
+                    }) + '\n'
+                    return
+
+                # Generate new summary
+                app.logger.info("Fetching video data for new summary")
+                yield json.dumps({'type': 'progress', 'message': 'Fetching video data...'}) + '\n'
+                video_data = get_video_data(video_id)
+
+                if not video_data:
+                    app.logger.error("Failed to fetch video data or subtitles not available")
+                    yield json.dumps({'type': 'error', 'message': 'Unable to fetch video data or subtitles not available'}) + '\n'
+                    return
+
+                video_title = video_data[0].get('title', 'Unknown Video')
+                app.logger.info(f"Video title: {video_title}")
+                yield json.dumps({'type': 'progress', 'message': f'Analyzing video: {video_title}'}) + '\n'
+
+                app.logger.info("Generating video summary")
+                yield json.dumps({'type': 'progress', 'message': 'Generating summary...'}) + '\n'
+                summary_json = generate_video_summary(video_data[0])
+                
+                try:
+                    summary = json.loads(summary_json)
+                    app.logger.info("Successfully generated and parsed summary")
+                except json.JSONDecodeError as e:
+                    app.logger.error(f"Failed to parse summary JSON: {str(e)}")
+                    yield json.dumps({'type': 'error', 'message': 'Failed to generate a valid summary'}) + '\n'
+                    return
+
+                # Create new summary
+                new_summary = VideoSummary(
+                    video_id=video_id,
+                    video_title=video_title,
+                    summary_data=summary_json,
+                    raw_video_data=json.dumps(video_data[0])
+                )
+                db.session.add(new_summary)
+                db.session.flush()
+
+                # Create user access
+                user_access = UserVideoAccess(user_id=current_user.id, summary_id=new_summary.id)
+                db.session.add(user_access)
+                db.session.commit()
+                app.logger.info(f"New summary created with ID: {new_summary.id}")
+
+                redirect_url = url_for('dashboard', new_summary=new_summary.id)
+                app.logger.info(f"Redirecting to: {redirect_url}")
+                yield json.dumps({
+                    'type': 'complete',
+                    'redirect_url': redirect_url
+                }) + '\n'
 
         except Exception as e:
-            app.logger.error(f"An error occurred: {str(e)}")
-            yield json.dumps({'error': f'An unexpected error occurred: {str(e)}'}) + '\n'
+            app.logger.error(f"Error in process_url: {str(e)}", exc_info=True)
+            yield json.dumps({'type': 'error', 'message': f'An unexpected error occurred: {str(e)}'}) + '\n'
 
     return Response(stream_with_context(generate()), content_type='application/json')
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    # Fetch user's channel report accesses
+    user_report_accesses = UserReportAccess.query.filter_by(user_id=current_user.id).order_by(UserReportAccess.date_accessed.desc()).all()
+    
+    # Fetch video summaries for the current user
+    user_video_accesses = UserVideoAccess.query.filter_by(user_id=current_user.id).order_by(UserVideoAccess.date_accessed.desc()).all()
+    
+    combined_data = []
+    
+    # Process channel reports
+    for access in user_report_accesses:
+        combined_data.append({
+            'type': 'channel_report',
+            'item': access.report,
+            'date_accessed': access.date_accessed,
+            'date_created': access.report.date_created
+        })
+    
+    # Process video summaries
+    for access in user_video_accesses:
+        combined_data.append({
+            'type': 'video_summary',
+            'item': access.summary,
+            'date_accessed': access.date_accessed,
+            'date_created': access.summary.date_created
+        })
+    
+    # Sort combined data by date accessed, most recent first
+    combined_data.sort(key=lambda x: x['date_created'], reverse=True)
+    
+    # Check for new report or summary
+    new_report_id = request.args.get('new_report')
+    new_summary_id = request.args.get('new_summary')
+    
+    return render_template('dashboard.html', 
+                         combined_data=combined_data,
+                         new_report_id=new_report_id,
+                         new_summary_id=new_summary_id)
 
 @app.route('/report/<int:report_id>')
 @login_required
@@ -614,6 +741,68 @@ def get_summary(summary_id):
         app.logger.error(f"Error in get_summary: {str(e)}")
         return jsonify({'error': 'An unexpected error occurred'}), 500
     
+
+
+# Run the app (dev mode only)
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()  # Create database tables before running the app
+    app.run(host='0.0.0.0', port=5000, debug=True)  # Run in debug mode for development
+
+
+### OUTDATED ROUTES
+
+'''
+@app.route('/reports')
+@login_required
+def reports():
+    # Fetch user's channel report accesses
+    user_report_accesses = UserReportAccess.query.filter_by(user_id=current_user.id).order_by(UserReportAccess.date_accessed.desc()).all()
+    
+    # Fetch video summaries for the current user
+    user_video_accesses = UserVideoAccess.query.filter_by(user_id=current_user.id).order_by(UserVideoAccess.date_accessed.desc()).all()
+    
+    combined_data = []
+    
+    # Process channel reports
+    for access in user_report_accesses:
+        combined_data.append({
+            'type': 'channel_report',
+            'item': access.report,
+            'date_accessed': access.date_accessed,
+            'date_created': access.report.date_created
+        })
+    
+    # Process video summaries
+    for access in user_video_accesses:
+        combined_data.append({
+            'type': 'video_summary',
+            'item': access.summary,
+            'date_accessed': access.date_accessed,
+            'date_created': access.summary.date_created
+        })
+    
+    # Sort combined data by date accessed, most recent first
+    combined_data.sort(key=lambda x: x['date_created'], reverse=True)
+    
+    # Check for new report or summary
+    new_report_id = request.args.get('new_report')
+    new_summary_id = request.args.get('new_summary')
+    
+    # If there's a new report or summary, get its data
+    new_item = None
+    if new_report_id:
+        new_item = next((item for item in combined_data if item['type'] == 'channel_report' and str(item['item'].id) == new_report_id), None)
+    elif new_summary_id:
+        new_item = next((item for item in combined_data if item['type'] == 'video_summary' and str(item['item'].id) == new_summary_id), None)
+    
+    return render_template('reports.html', 
+                           combined_data=combined_data, 
+                           new_item=new_item, 
+                           new_report_id=new_report_id, 
+                           new_summary_id=new_summary_id)'''
+
+'''
 @app.route('/summarize')
 @login_required
 def summarize():
@@ -723,10 +912,91 @@ def summarize_video():
             app.logger.error(f"An error occurred in summarize_video: {str(e)}")
             yield json.dumps({'type': 'error', 'message': f'An unexpected error occurred: {str(e)}'}) + '\n'
 
-    return Response(stream_with_context(generate()), content_type='application/json')
+    return Response(stream_with_context(generate()), content_type='application/json')'''
 
-# Run the app (dev mode only)
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()  # Create database tables before running the app
-    app.run(host='0.0.0.0', port=5000, debug=True)  # Run in debug mode for development
+'''
+@app.route('/analyze_channel', methods=['POST'])
+@login_required
+def analyze_channel():
+    def generate():
+        try:
+            data = request.get_json()
+            if not data or 'channel_url' not in data:
+                yield json.dumps({'error': 'Invalid request. Please provide a channel_url.'}) + '\n'
+                return
+
+            channel_url = data['channel_url']
+            yield json.dumps({'progress': 'Extracting channel ID '}) + '\n'
+            channel_id = extract_channel_id(channel_url)
+
+            if not channel_id:
+                yield json.dumps({'error': 'Invalid YouTube channel URL'}) + '\n'
+                return
+            
+            yield json.dumps({'progress': f'Channel ID: {channel_id}'}) + '\n'
+
+            # Check if a fresh report exists
+            existing_report = ChannelReport.query.filter_by(channel_id=channel_id).first()
+            
+            if existing_report:
+                yield json.dumps({'progress': 'Existing report found. Retrieving data '}) + '\n'
+                report_data = json.loads(existing_report.report_data)
+                channel_data = json.loads(existing_report.raw_channel_data)
+                channel_title = channel_data.get('title', 'Unknown Channel')
+            else:
+                yield json.dumps({'progress': 'Fetching channel data from YouTube '}) + '\n'
+                channel_data = fetch_channel_data(channel_id)
+
+                if not channel_data:
+                    yield json.dumps({'error': 'Unable to fetch channel data'}) + '\n'
+                    return
+
+                channel_title = channel_data.get('title', 'Unknown Channel')
+                yield json.dumps({'progress': f'Analyzing channel: {channel_title}'}) + '\n'
+
+                yield json.dumps({'progress': 'Generating report (can take a minute) '}) + '\n'
+                report_json = generate_channel_report(channel_data)
+
+                if not report_json:
+                    yield json.dumps({'error': 'Failed to generate channel report'}) + '\n'
+                    return
+
+                report_data = json.loads(report_json)
+                
+                # Extract categorization data
+                categorization = report_data['consultation_report']['categorisation'][0]
+
+                # Create new report
+                existing_report = ChannelReport(
+                    channel_id=channel_id,
+                    channel_title=channel_title,
+                    report_data=report_json,
+                    raw_channel_data=json.dumps(channel_data)
+                )
+                existing_report.set_categorization(categorization)
+                db.session.add(existing_report)
+                db.session.commit()
+
+            # Create or update UserReportAccess
+            user_access = UserReportAccess.query.filter_by(user_id=current_user.id, report_id=existing_report.id).first()
+            if not user_access:
+                user_access = UserReportAccess(user_id=current_user.id, report_id=existing_report.id)
+                db.session.add(user_access)
+            else:
+                user_access.date_accessed = get_local_time()
+            db.session.commit()
+
+            yield json.dumps({'progress': 'Report retrieved and added to your reports.'}) + '\n'
+            yield json.dumps({
+                'report': report_data,
+                'report_id': existing_report.id,
+                'channel_title': channel_title,
+                'avatar_url': channel_data['avatar_url'],
+                'redirect_url': url_for('reports', new_report=existing_report.id)
+            }) + '\n'
+
+        except Exception as e:
+            app.logger.error(f"An error occurred: {str(e)}")
+            yield json.dumps({'error': f'An unexpected error occurred: {str(e)}'}) + '\n'
+
+    return Response(stream_with_context(generate()), content_type='application/json')'''

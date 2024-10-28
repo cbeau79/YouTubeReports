@@ -132,14 +132,12 @@
 <body class="bg-zinc-500 min-h-screen flex flex-col">
     <nav class="bg-zinc-800 text-white h-24 flex items-center">
         <div class="container mx-auto px-4 flex justify-between items-center">
-            <a href="{{ url_for('reports') }}" class="text-2xl font-bold flex items-center">
+            <a href="{{ url_for('dashboard') }}" class="text-2xl font-bold flex items-center">
                 <img src="{{ url_for('serve_image', filename='lumina-horiz-225x40.png') }}" alt="Lumina" class="h-8">
             </a>
             <div class="space-x-4 text-lg">
                 {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('analyze') }}" class="hover:text-zinc-200">Analyze</a>
-                    <a href="{{ url_for('summarize') }}" class="hover:text-zinc-200">Summarize</a>
-                    <a href="{{ url_for('reports') }}" class="hover:text-zinc-200">Reports</a>
+                    <a href="{{ url_for('dashboard') }}" class="hover:text-zinc-200">Dashboard</a>
                     <a href="{{ url_for('account') }}" class="hover:text-zinc-200">Account</a>
                     <a href="{{ url_for('logout') }}" class="hover:text-zinc-200">Logout</a>
                 {% else %}
