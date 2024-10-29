@@ -246,6 +246,7 @@ def create_temp_cookie_file():
         temp_cookie_file = os.path.join(tempfile.gettempdir(), f"yt_cookies_{os.getpid()}.txt")
         
         # Copy the original cookie file to the temporary location
+        logging.info(f"Copying {COOKIE_FILE} to {temp_cookie_file}")
         shutil.copy2(COOKIE_FILE, temp_cookie_file)
 
         # DELETE ME
@@ -256,6 +257,17 @@ def create_temp_cookie_file():
         os.chmod(temp_cookie_file, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)  # Read-only for everyone
         
         logging.info(f"Created temporary cookie file: {temp_cookie_file}")
+
+        # Full cookie file dump
+        try:
+            logging.info("========== DUMPING COOKIE FILE CONTENTS ==========")
+            with open(temp_cookie_file, 'r', encoding='utf-8') as f:
+                for line_num, line in enumerate(f, 1):
+                    logging.info(f"Line {line_num}: {line.rstrip()}")
+            logging.info("================ END COOKIE DUMP ================")
+        except Exception as e:
+            logging.error(f"Failed to dump cookie file contents: {str(e)}")
+
         return temp_cookie_file
         
     except Exception as e:
@@ -326,7 +338,10 @@ def get_video_subtitles(video_id):
             logging.debug(f"yt-dlp options: {ydl_opts}")
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+
                 logging.info("Extracting video info...")
+                # DELETE ME
+                shutil.copy2(temp_cookie_file, 'temp_immediately_prior_to_use.txt')
                 info = ydl.extract_info(video_url, download=False)
                 logging.debug(f"Video info extracted: {info.keys()}")
                 
