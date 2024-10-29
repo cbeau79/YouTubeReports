@@ -247,9 +247,13 @@ def create_temp_cookie_file():
         
         # Copy the original cookie file to the temporary location
         shutil.copy2(COOKIE_FILE, temp_cookie_file)
+
+        # DELETE ME
+        shutil.copy2(temp_cookie_file, 'temp_before.txt')
         
         # Set appropriate permissions on the temporary file
-        os.chmod(temp_cookie_file, stat.S_IRUSR | stat.S_IWUSR)  # Read and write for owner
+        #os.chmod(temp_cookie_file, stat.S_IRUSR | stat.S_IWUSR)  # Read and write for owner
+        os.chmod(temp_cookie_file, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)  # Read-only for everyone
         
         logging.info(f"Created temporary cookie file: {temp_cookie_file}")
         return temp_cookie_file
@@ -267,56 +271,32 @@ def cleanup_temp_cookie_file(temp_file):
                 os.chmod(temp_file, stat.S_IRUSR | stat.S_IWUSR)
             except Exception as e:
                 logging.warning(f"Could not modify permissions for cleanup: {str(e)}")
+            
+            # DELETE ME
+            shutil.copy2(temp_file, 'temp_after.txt')
                 
             os.remove(temp_file)
             logging.info(f"Removed temporary cookie file: {temp_file}")
         except Exception as e:
             logging.warning(f"Error removing temporary cookie file: {str(e)}")
 
-'''def get_yt_dlp_opts():
-    """Get yt-dlp options with cookie file configuration."""
-    temp_cookie_file = create_temp_cookie_file()
-    if not temp_cookie_file:
-        return None
-    
-    return {
-        'nocheckcertificate': True,
-        'no_warnings': True,
-        'ignoreerrors': False,
-        'quiet': True,
-        'no_color': True,
-        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'referer': 'https://www.youtube.com/',
-        'cookiefile': temp_cookie_file,
-        'no_cache_dir': True
-    }'''
-
 def get_video_subtitles(video_id):
     """
     Fetch the subtitle file for a given video ID using yt-dlp.
     Returns only the spoken text content without formatting, timestamps, or metadata.
-    Returns None if no subtitles are available.
+    Returns None if subtitles are not available.
     """
     video_url = f'https://www.youtube.com/watch?v={video_id}'
+    temp_cookie_file = None
+    subtitles_text = None
 
-    temp_cookie_file = create_temp_cookie_file()
-    
-    if not temp_cookie_file:
-        logging.error("Failed to create temporary cookie file")
-        return None
-    
     try:
-        # Validate cookies before proceeding
-        # cookie_validator = CookieValidator(COOKIE_FILE)
-        # is_valid, message = cookie_validator.check_status()
+        temp_cookie_file = create_temp_cookie_file()
         
-        '''if not is_valid:
-            logging.error(f"Cookie validation failed: {message}")
-            # You could implement some notification system here
-            # For now, just log it prominently
-            logging.critical("ATTENTION: YouTube cookies need to be refreshed!")
-            return None'''
-
+        if not temp_cookie_file:
+            logging.error("Failed to create temporary cookie file")
+            return None
+        
         # Create yt-dlp options
         ydl_opts = {
             'nocheckcertificate': True,
@@ -327,9 +307,11 @@ def get_video_subtitles(video_id):
             'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'referer': 'https://www.youtube.com/',
             'cookiefile': temp_cookie_file,
-            'no_cache_dir': True
+            'no_cache_dir': True,
+            'no_overwrites': True,
+            'no_cookies': True
         }
-            
+
         with tempfile.TemporaryDirectory() as temp_dir:
             ydl_opts.update({
                 'skip_download': True,
@@ -342,8 +324,6 @@ def get_video_subtitles(video_id):
             
             logging.info(f"Attempting to fetch subtitles for video: {video_id}")
             logging.debug(f"yt-dlp options: {ydl_opts}")
-            
-            subtitles_text = None  # Variable to store successful subtitle extraction
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 logging.info("Extracting video info...")
@@ -362,7 +342,7 @@ def get_video_subtitles(video_id):
                 else:
                     logging.warning(f"No English subtitles or captions available for video: {video_id}")
                     return None
-                
+
                 # Process the subtitle file
                 for subtitle_ext in subtitle_formats:
                     subtitle_filename = os.path.join(temp_dir, f"{video_id}{subtitle_ext}")
@@ -377,19 +357,21 @@ def get_video_subtitles(video_id):
                         subtitles_text = clean_subtitle_text(subtitle_content)
                         logging.info("Subtitles successfully extracted and processed.")
                         break  # Exit loop once we have successful extraction
-                
-                return subtitles_text  # Return the subtitles if we found them
-                
+
     except Exception as e:
         logging.error(f"Error in subtitle extraction: {str(e)}")
-        return None
+        # Don't return None here - we might have subtitles despite the error
         
     finally:
-        # Always try to clean up the temporary cookie file
-        try:
-            cleanup_temp_cookie_file(temp_cookie_file)
-        except Exception as e:
-            logging.warning(f"Error during cleanup: {str(e)}")
+        # Try to clean up the temporary cookie file, but don't let cleanup failures affect the result
+        if temp_cookie_file:
+            try:
+                cleanup_temp_cookie_file(temp_cookie_file)
+            except Exception as e:
+                logging.warning(f"Non-critical error during cleanup: {str(e)}")
+                # Continue anyway - cleanup failure shouldn't invalidate successful subtitle extraction
+
+    return subtitles_text  # Return whatever we got, even if cleanup failed
 
 def clean_subtitle_text(subtitle_content):
     """
@@ -506,3 +488,130 @@ def fetch_channel_data(channel_id):
         print(f"An error occurred while fetching channel data: {e}")
         return None
     
+''' *** MISGUIDED IDEAS *** '''
+
+'''def get_yt_dlp_opts():
+    """Get yt-dlp options with cookie file configuration."""
+    temp_cookie_file = create_temp_cookie_file()
+    if not temp_cookie_file:
+        return None
+    
+    return {
+        'nocheckcertificate': True,
+        'no_warnings': True,
+        'ignoreerrors': False,
+        'quiet': True,
+        'no_color': True,
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'referer': 'https://www.youtube.com/',
+        'cookiefile': temp_cookie_file,
+        'no_cache_dir': True
+    }
+
+def get_video_subtitles(video_id):
+    """
+    Fetch the subtitle file for a given video ID using yt-dlp.
+    Returns only the spoken text content without formatting, timestamps, or metadata.
+    Returns None if no subtitles are available.
+    """
+    video_url = f'https://www.youtube.com/watch?v={video_id}'
+
+    temp_cookie_file = create_temp_cookie_file()
+    
+    if not temp_cookie_file:
+        logging.error("Failed to create temporary cookie file")
+        return None
+    
+    try:
+        # Validate cookies before proceeding
+        # cookie_validator = CookieValidator(COOKIE_FILE)
+        # is_valid, message = cookie_validator.check_status()
+        
+        if not is_valid:
+            logging.error(f"Cookie validation failed: {message}")
+            # You could implement some notification system here
+            # For now, just log it prominently
+            logging.critical("ATTENTION: YouTube cookies need to be refreshed!")
+            return None
+
+        # Create yt-dlp options
+        ydl_opts = {
+            'nocheckcertificate': True,
+            'no_warnings': True,
+            'ignoreerrors': False,
+            'quiet': True,
+            'no_color': True,
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'referer': 'https://www.youtube.com/',
+            'cookiefile': temp_cookie_file,
+            'no_cache_dir': True,
+            'no_overwrites': True,
+            'no_cookies': True
+        }
+        
+        # DELETE ME
+        shutil.copy2(temp_cookie_file, 'temp_during.txt')
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            ydl_opts.update({
+                'skip_download': True,
+                'writesubtitles': True,
+                'writeautomaticsub': True,
+                'subtitleslangs': ['en', 'en-US'],
+                'subtitlesformat': 'vtt',
+                'outtmpl': os.path.join(temp_dir, '%(id)s.%(ext)s')
+            })
+            
+            logging.info(f"Attempting to fetch subtitles for video: {video_id}")
+            logging.debug(f"yt-dlp options: {ydl_opts}")
+            
+            subtitles_text = None  # Variable to store successful subtitle extraction
+            
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                logging.info("Extracting video info...")
+                info = ydl.extract_info(video_url, download=False)
+                logging.debug(f"Video info extracted: {info.keys()}")
+                
+                subtitle_formats = ['.en.vtt', '.en-US.vtt', '.en.ttml', '.en-US.ttml', '.en.srv3', '.en-US.srv3']
+                
+                # Check for and download subtitles
+                if 'subtitles' in info and ('en' in info['subtitles'] or 'en-US' in info['subtitles']):
+                    logging.info("Manual English subtitles found. Downloading...")
+                    ydl.download([video_url])
+                elif 'automatic_captions' in info and ('en' in info['automatic_captions'] or 'en-US' in info['automatic_captions']):
+                    logging.info("Automatic English captions found. Downloading...")
+                    ydl.download([video_url])
+                else:
+                    logging.warning(f"No English subtitles or captions available for video: {video_id}")
+                    return None
+                
+                # DELETE ME
+                shutil.copy2(temp_cookie_file, 'temp_during_2.txt')
+
+                # Process the subtitle file
+                for subtitle_ext in subtitle_formats:
+                    subtitle_filename = os.path.join(temp_dir, f"{video_id}{subtitle_ext}")
+                    logging.info(f"Looking for subtitle file: {subtitle_filename}")
+                    
+                    if os.path.exists(subtitle_filename):
+                        logging.info(f"Subtitle file found. Reading content...")
+                        with open(subtitle_filename, 'r', encoding='utf-8') as f:
+                            subtitle_content = f.read()
+                        
+                        # Clean up the subtitle content
+                        subtitles_text = clean_subtitle_text(subtitle_content)
+                        logging.info("Subtitles successfully extracted and processed.")
+                        break  # Exit loop once we have successful extraction
+                
+                return subtitles_text  # Return the subtitles if we found them
+                
+    except Exception as e:
+        logging.error(f"Error in subtitle extraction: {str(e)}")
+        return None
+        
+    finally:
+        # Always try to clean up the temporary cookie file
+        try:
+            cleanup_temp_cookie_file(temp_cookie_file)
+        except Exception as e:
+            logging.warning(f"Error during cleanup: {str(e)}")'''
