@@ -44,55 +44,6 @@ mail = Mail(app)
 def get_local_time():
     return datetime.now(timezone('US/Pacific'))
 
-'''class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
-    first_name = db.Column(db.String(100))
-    last_name = db.Column(db.String(100))
-    report_accesses = db.relationship('UserReportAccess', back_populates='user')
-    video_accesses = db.relationship('UserVideoAccess', back_populates='user')
-
-    def __init__(self, email, password):
-        self.email = email
-        self.set_password(password)
-
-    def set_password(self, password):
-        self.password = generate_password_hash(password)
-
-    def check_password(self, password):
-        return check_password_hash(self.password, password)
-
-    def get_reset_token(self, expires_sec=1800):
-        s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-        return s.dumps({'user_id': self.id}, salt='password-reset-salt')
-
-    @staticmethod
-    def verify_reset_token(token, expires_sec=1800):
-        s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-        try:
-            user_id = s.loads(token, salt='password-reset-salt', max_age=expires_sec)['user_id']
-        except:
-            return None
-        return User.query.get(user_id)
-
-    def get_full_name(self):
-        return f"{self.first_name} {self.last_name}".strip() or self.email
-
-    def delete_account(self):
-        UserReportAccess.query.filter_by(user_id=self.id).delete()
-        UserVideoAccess.query.filter_by(user_id=self.id).delete()
-        db.session.delete(self)
-        db.session.commit()
-
-    @property
-    def username(self):
-        return self.email
-
-    @property
-    def video_summaries(self):
-        return VideoSummary.query.join(UserVideoAccess).filter(UserVideoAccess.user_id == self.id)'''
-
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -227,8 +178,8 @@ def save_json_to_file(data, channel_id):
 
 def seed_user_account(user_id):
     # List of pre-selected channel IDs and video IDs for seeding
-    sample_channel_ids = ['', '', '']
-    sample_video_ids = ['', '', '']
+    sample_channel_ids = ['UCLXo7UDZvByw2ixzpQCufnA', 'UC7IcJI8PUf5Z3zKxnZvTBog', 'UCbu2SsF-Or3Rsn3NxqODImw']
+    sample_video_ids = ['YGfJeH5HRDQ', 'QS5-Z-oP-Hw', 'mE0-ks3RcOU']
 
     try:
         user = User.query.get(user_id)
@@ -307,25 +258,56 @@ def account():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
-        
-        if password != confirm_password:
-            flash('Passwords do not match.')
+        try:
+            email = request.form.get('email')
+            password = request.form.get('password')
+            confirm_password = request.form.get('confirm_password')
+            
+            app.logger.info(f"Processing registration for email: {email}")
+            
+            # Validate passwords match
+            if password != confirm_password:
+                app.logger.warning("Password mismatch during registration")
+                flash('Passwords do not match.')
+                return redirect(url_for('register'))
+            
+            # Check if user exists
+            existing_user = User.query.filter_by(email=email).first()
+            if existing_user:
+                app.logger.warning(f"Registration attempted with existing email: {email}")
+                flash('Email already exists')
+                return redirect(url_for('register'))
+            
+            # Create new user
+            new_user = User(email=email, password=password)
+            db.session.add(new_user)
+            db.session.flush()  # Get the new user ID without committing
+            
+            app.logger.info(f"New user created with ID: {new_user.id}")
+            
+            # Seed the account
+            seeding_success = seed_user_account(new_user.id)
+            if seeding_success:
+                app.logger.info(f"Successfully seeded account for user ID: {new_user.id}")
+            else:
+                app.logger.warning(f"Failed to seed account for user ID: {new_user.id}")
+                # Continue anyway - unseeded account is better than no account
+            
+            db.session.commit()
+            
+            flash('Registration successful! Your account has been pre-loaded with some example analyses. Please log in.')
+            return redirect(url_for('login'))
+            
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            app.logger.error(f"Database error during registration: {str(e)}")
+            flash('An error occurred during registration. Please try again.')
             return redirect(url_for('register'))
-        
-        user = User.query.filter_by(email=email).first()
-        if user:
-            flash('Email already exists')
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Unexpected error during registration: {str(e)}")
+            flash('An unexpected error occurred. Please try again.')
             return redirect(url_for('register'))
-        
-        new_user = User(email=email, password=password)
-        db.session.add(new_user)
-        db.session.commit()
-        
-        flash('Registration successful. Please log in.')
-        return redirect(url_for('login'))
     
     return render_template('register.html')
 

@@ -248,13 +248,10 @@ def create_temp_cookie_file():
         # Copy the original cookie file to the temporary location
         logging.info(f"Copying {COOKIE_FILE} to {temp_cookie_file}")
         shutil.copy2(COOKIE_FILE, temp_cookie_file)
-
-        # DELETE ME
-        shutil.copy2(temp_cookie_file, 'temp_before.txt')
         
         # Set appropriate permissions on the temporary file
-        #os.chmod(temp_cookie_file, stat.S_IRUSR | stat.S_IWUSR)  # Read and write for owner
-        os.chmod(temp_cookie_file, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)  # Read-only for everyone
+        os.chmod(temp_cookie_file, stat.S_IRUSR | stat.S_IWUSR)  # Read and write for owner
+        #os.chmod(temp_cookie_file, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)  # Read-only for everyone
         
         logging.info(f"Created temporary cookie file: {temp_cookie_file}")
 
@@ -283,9 +280,6 @@ def cleanup_temp_cookie_file(temp_file):
                 os.chmod(temp_file, stat.S_IRUSR | stat.S_IWUSR)
             except Exception as e:
                 logging.warning(f"Could not modify permissions for cleanup: {str(e)}")
-            
-            # DELETE ME
-            shutil.copy2(temp_file, 'temp_after.txt')
                 
             os.remove(temp_file)
             logging.info(f"Removed temporary cookie file: {temp_file}")
@@ -340,8 +334,6 @@ def get_video_subtitles(video_id):
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
 
                 logging.info("Extracting video info...")
-                # DELETE ME
-                shutil.copy2(temp_cookie_file, 'temp_immediately_prior_to_use.txt')
                 info = ydl.extract_info(video_url, download=False)
                 logging.debug(f"Video info extracted: {info.keys()}")
                 
