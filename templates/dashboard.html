@@ -467,6 +467,20 @@ function displayReport(data, container) {
 
     let content = '';
 
+    // Add export buttons
+    content += `
+        <div class="flex justify-end space-x-2 mb-4">
+            <a href="/export/report/${data.report_id}/pdf" 
+               class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                Export PDF
+            </a>
+            <a href="/export/report/${data.report_id}/markdown"
+               class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors">
+                Export Markdown
+            </a>
+        </div>
+    `;
+
     if (raw_data) {
         const createTags = (items, bgColor) => items.slice(0, 3).map(item => 
             `<span class="inline-block ${bgColor} text-white text-xs px-2 py-1 rounded-full mx-1">${item}</span>`
@@ -588,6 +602,16 @@ function displaySection(section, title, isSimple = false) {
 function displaySummary(data, container) {
     const summary = data.summary;
     container.innerHTML = `
+        <div class="flex justify-end space-x-2 mb-4">
+            <!-- a href="/export/summary/${data.summary_id}/pdf"
+               class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                Export PDF
+            </a -->
+            <a href="/export/summary/${data.summary_id}/markdown"
+               class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors">
+                Export Markdown
+            </a>
+        </div>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2">
                 <div class="report-panel bg-zinc-100 p-4 rounded-lg mb-4">

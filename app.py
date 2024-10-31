@@ -1,5 +1,5 @@
 # Import necessary modules
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, Response, stream_with_context, send_from_directory, current_app
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, Response, stream_with_context, send_from_directory, current_app, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -16,6 +16,13 @@ from youtube_utils import extract_channel_id, fetch_channel_data, extract_video_
 from openai_utils import generate_channel_report, generate_video_summary
 import logging
 from logging.handlers import RotatingFileHandler
+from export_utils import (
+    generate_channel_report_pdf,
+    generate_video_summary_pdf,
+    generate_channel_report_markdown,
+    generate_video_summary_markdown
+)
+from io import BytesIO
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -310,6 +317,98 @@ def register():
             return redirect(url_for('register'))
     
     return render_template('register.html')
+
+@app.route('/export/report/<int:report_id>/<format>')
+@login_required
+def export_report(report_id, format):
+    report = ChannelReport.query.get(report_id)
+    user_access = UserReportAccess.query.filter_by(user_id=current_user.id, report_id=report_id).first()
+    
+    if not report or not user_access:
+        flash('Report not found or access denied')
+        return redirect(url_for('dashboard'))
+    
+    try:
+        if format == 'pdf':
+            pdf = generate_channel_report_pdf(report.report_data, report.raw_channel_data)
+            
+            # Get PDF content as bytes
+            pdf_content = pdf.output(dest='S').encode('latin-1')
+            
+            # Create BytesIO object from the bytes
+            pdf_output = BytesIO(pdf_content)
+            
+            return send_file(
+                pdf_output,
+                mimetype='application/pdf',
+                as_attachment=True,
+                download_name=f'channel_report_{report.channel_id}.pdf'
+            )
+            
+        elif format == 'markdown':
+            markdown = generate_channel_report_markdown(report.report_data, report.raw_channel_data)
+            
+            return Response(
+                markdown,
+                mimetype='text/markdown',
+                headers={
+                    'Content-Disposition': f'attachment; filename=channel_report_{report.channel_id}.md'
+                }
+            )
+        else:
+            flash('Invalid export format')
+            return redirect(url_for('dashboard'))
+            
+    except Exception as e:
+        app.logger.error(f"Export error: {str(e)}")
+        flash('Error generating export')
+        return redirect(url_for('dashboard'))
+
+@app.route('/export/summary/<int:summary_id>/<format>')
+@login_required
+def export_summary(summary_id, format):
+    summary = VideoSummary.query.get(summary_id)
+    user_access = UserVideoAccess.query.filter_by(user_id=current_user.id, summary_id=summary_id).first()
+    
+    if not summary or not user_access:
+        flash('Summary not found or access denied')
+        return redirect(url_for('dashboard'))
+    
+    try:
+        if format == 'pdf':
+            pdf = generate_video_summary_pdf(summary.summary_data, summary.raw_video_data)
+            
+            # Get PDF content as bytes
+            pdf_content = pdf.output(dest='S').encode('latin-1')
+            
+            # Create BytesIO object from the bytes
+            pdf_output = BytesIO(pdf_content)
+            
+            return send_file(
+                pdf_output,
+                mimetype='application/pdf',
+                as_attachment=True,
+                download_name=f'video_summary_{summary.video_id}.pdf'
+            )
+            
+        elif format == 'markdown':
+            markdown = generate_video_summary_markdown(summary.summary_data, summary.raw_video_data)
+            
+            return Response(
+                markdown,
+                mimetype='text/markdown',
+                headers={
+                    'Content-Disposition': f'attachment; filename=video_summary_{summary.video_id}.md'
+                }
+            )
+        else:
+            flash('Invalid export format')
+            return redirect(url_for('dashboard'))
+            
+    except Exception as e:
+        app.logger.error(f"Export error: {str(e)}")
+        flash('Error generating export')
+        return redirect(url_for('dashboard'))
 
 def send_reset_email(user):
     token = user.get_reset_token()
@@ -688,7 +787,8 @@ def get_report(report_id):
                 'report': json.loads(report.report_data),
                 'raw_channel_data': json.loads(report.raw_channel_data) if report.raw_channel_data else None,
                 'date_created': report.date_created.isoformat(),
-                'categorization': report.get_categorization()
+                'categorization': report.get_categorization(),
+                'report_id': report_id  # Add this line
             })
         else:
             app.logger.warning(f"Report {report_id} not found or access denied for user {current_user.id}")
@@ -711,7 +811,8 @@ def get_summary(summary_id):
                     'video_id': summary.video_id,
                     'video_title': summary.video_title,
                     'date_created': summary.date_created.isoformat(),
-                    'raw_data': json.loads(summary.raw_video_data)
+                    'raw_data': json.loads(summary.raw_video_data),
+                    'summary_id': summary_id  # Add this line
                 })
             else:
                 app.logger.warning(f"User {current_user.id} attempted to access summary {summary_id} without permission")
