@@ -530,7 +530,7 @@ def process_url():
 
             url = data['url']
             app.logger.info(f"Processing URL: {url}")
-            yield json.dumps({'type': 'progress', 'message': 'Analyzing URL type...'}) + '\n'
+            yield json.dumps({'type': 'progress', 'message': 'Analyzing URL type '}) + '\n'
 
             # Try to extract channel ID first
             app.logger.info("Attempting to extract channel ID")
@@ -539,7 +539,7 @@ def process_url():
             
             if channel_id:
                 app.logger.info(f"Processing as channel. Channel ID: {channel_id}")
-                yield json.dumps({'type': 'progress', 'message': 'Channel URL detected. Processing channel analysis...'}) + '\n'
+                yield json.dumps({'type': 'progress', 'message': 'Channel URL detected. Processing channel analysis '}) + '\n'
                 
                 # Check for existing report
                 existing_report = ChannelReport.query.filter_by(channel_id=channel_id).first()
@@ -547,7 +547,7 @@ def process_url():
                 
                 if existing_report:
                     app.logger.info(f"Found existing report for channel {channel_id}")
-                    yield json.dumps({'type': 'progress', 'message': 'Existing report found. Retrieving data...'}) + '\n'
+                    yield json.dumps({'type': 'progress', 'message': 'Existing report found. Retrieving data '}) + '\n'
                     
                     # Create or update user access
                     user_access = UserReportAccess.query.filter_by(
@@ -578,7 +578,7 @@ def process_url():
 
                 # Generate new report
                 app.logger.info("Fetching channel data for new report")
-                yield json.dumps({'type': 'progress', 'message': 'Fetching channel data from YouTube...'}) + '\n'
+                yield json.dumps({'type': 'progress', 'message': 'Fetching channel data from YouTube '}) + '\n'
                 channel_data = fetch_channel_data(channel_id)
 
                 if not channel_data:
@@ -591,7 +591,7 @@ def process_url():
                 yield json.dumps({'type': 'progress', 'message': f'Analyzing channel: {channel_title}'}) + '\n'
 
                 app.logger.info("Generating channel report")
-                yield json.dumps({'type': 'progress', 'message': 'Generating report...'}) + '\n'
+                yield json.dumps({'type': 'progress', 'message': 'Generating report '}) + '\n'
                 report_json = generate_channel_report(channel_data)
 
                 if not report_json:
@@ -638,7 +638,7 @@ def process_url():
                     yield json.dumps({'type': 'error', 'message': 'Invalid YouTube URL'}) + '\n'
                     return
 
-                yield json.dumps({'type': 'progress', 'message': 'Video URL detected. Processing video analysis...'}) + '\n'
+                yield json.dumps({'type': 'progress', 'message': 'Video URL detected. Processing video analysis '}) + '\n'
 
                 # Check for existing summary
                 existing_summary = VideoSummary.query.filter_by(video_id=video_id).first()
@@ -646,7 +646,7 @@ def process_url():
                 
                 if existing_summary:
                     app.logger.info(f"Found existing summary for video {video_id}")
-                    yield json.dumps({'type': 'progress', 'message': 'Existing summary found. Retrieving data...'}) + '\n'
+                    yield json.dumps({'type': 'progress', 'message': 'Existing summary found. Retrieving data '}) + '\n'
                     
                     # Create or update user access
                     user_access = UserVideoAccess.query.filter_by(
@@ -677,7 +677,7 @@ def process_url():
 
                 # Generate new summary
                 app.logger.info("Fetching video data for new summary")
-                yield json.dumps({'type': 'progress', 'message': 'Fetching video data...'}) + '\n'
+                yield json.dumps({'type': 'progress', 'message': 'Fetching video data '}) + '\n'
                 video_data = get_video_data(video_id)
 
                 if not video_data:
@@ -690,7 +690,7 @@ def process_url():
                 yield json.dumps({'type': 'progress', 'message': f'Analyzing video: {video_title}'}) + '\n'
 
                 app.logger.info("Generating video summary")
-                yield json.dumps({'type': 'progress', 'message': 'Generating summary...'}) + '\n'
+                yield json.dumps({'type': 'progress', 'message': 'Generating summary '}) + '\n'
                 summary_json = generate_video_summary(video_data[0])
                 
                 try:

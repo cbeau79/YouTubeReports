@@ -184,7 +184,7 @@ function initializeContentForm() {
         // Clear previous messages
         progressLog.innerHTML = '';
         messageQueue = [];
-        addToMessageQueue('Starting analysis...');
+        addToMessageQueue('Starting analysis ');
 
         try {
             const response = await fetch('/process_url', {
@@ -244,7 +244,7 @@ function processChunk(line) {
                 addToMessageQueue(`Error: ${data.message}`);
                 break;
             case 'complete':
-                addToMessageQueue('Analysis complete. Redirecting...');
+                addToMessageQueue('Analysis complete. Redirecting ');
                 setTimeout(() => {
                     window.location.href = data.redirect_url;
                 }, 1500);
@@ -274,13 +274,23 @@ function typeNextMessage() {
 
     isTyping = true;
     const message = messageQueue.shift();
+    
+    // Remove 'active' class from any previous entries
+    document.querySelectorAll('.log-entry').forEach(entry => {
+        entry.classList.remove('active');
+    });
+    
     const logEntry = document.createElement('div');
-    logEntry.className = 'log-entry';
+    logEntry.className = 'log-entry active'; // Add 'active' class here
     logEntry.innerHTML = `> <span class="vidiprinter"></span>`;
     document.getElementById('progress-log').appendChild(logEntry);
     
     typeVidiprinter(logEntry.querySelector('.vidiprinter'), message, () => {
         document.getElementById('progress-log').scrollTop = document.getElementById('progress-log').scrollHeight;
+        // If this is the last message, keep it active
+        if (messageQueue.length > 0) {
+            logEntry.classList.remove('active');
+        }
         setTimeout(typeNextMessage, 50);
     });
 }
@@ -928,7 +938,7 @@ function displaySummary(data, container) {
                 `)}
             </div>
             <div>
-                ${displaySummarySection('Engagement Analysis', `<p class="report-text">${summary.engagement_analysis}</p>`)}
+                ${displaySummarySection('Engagement', `<p class="report-text">${summary.engagement_analysis}</p>`)}
                 ${displaySummarySection('Target Audience', `<p class="report-text">${summary.target_audience}</p>`)}
                 ${displaySummarySection('Discourse', `<p class="report-text mb-2">${summary.discourse_summary}</p>
                     <ul class="list-disc pl-5 report-text">
