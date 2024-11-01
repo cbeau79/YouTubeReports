@@ -282,7 +282,7 @@ def generate_video_summary_markdown(summary_data, raw_video_data):
         markdown.append(f"{point['point_description']}")
 
     # Discourse Section
-    markdown.append("## Discourse Analysis\n")
+    markdown.append("## Discourse\n")
     markdown.append(f"{summary['discourse_summary']}\n")
     for theme in summary['discourse_themes']:
         markdown.append(f"### {theme['theme_title']}")
@@ -293,7 +293,7 @@ def generate_video_summary_markdown(summary_data, raw_video_data):
     markdown.append(f"{summary['target_audience']}")
 
     # Engagement Analysis
-    markdown.append("## Engagement Analysis\n")
+    markdown.append("## Engagement\n")
     markdown.append(f"{summary['engagement_analysis']}")
 
     # Improvement Suggestions

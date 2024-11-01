@@ -23,6 +23,7 @@ from export_utils import (
     generate_video_summary_markdown
 )
 from io import BytesIO
+from waitress import serve
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -830,7 +831,10 @@ def get_summary(summary_id):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()  # Create database tables before running the app
-    app.run(host='0.0.0.0', port=5000, debug=True)  # Run in debug mode for development
+    # app.run(host='0.0.0.0', port=5000, debug=True)  # Run in debug mode for development
+
+    # Production-like server but still easy to run
+    serve(app, host='0.0.0.0', port=5000, threads=4)
 
 
 ### OUTDATED ROUTES
