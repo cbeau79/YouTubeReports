@@ -5,3 +5,4 @@ logs/*
 notion_utls.py
 .env
 code_graveyard.py
+auth/client_secrets.json
