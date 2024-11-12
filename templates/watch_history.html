@@ -1,0 +1,362 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header Section -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-zinc-800">YouTube Watch History Analysis</h1>
+        <p class="mt-2 text-zinc-600">Discover psychological insights from your viewing patterns</p>
+    </div>
+
+    <!-- Progress Steps -->
+    <div class="mb-8">
+        <div class="flex justify-between items-center">
+            <div class="flex-1">
+                <div id="auth-step" class="relative flex flex-col items-center">
+                    <div class="w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                    </div>
+                    <div class="mt-2 text-center">
+                        <div class="font-semibold">Authorization</div>
+                        <div class="text-sm text-gray-500">Connect YouTube</div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1">
+                <div id="fetch-step" class="relative flex flex-col items-center">
+                    <div class="w-12 h-12 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="mt-2 text-center">
+                        <div class="font-semibold">Fetching History</div>
+                        <div class="text-sm text-gray-500">Getting your data</div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1">
+                <div id="analyze-step" class="relative flex flex-col items-center">
+                    <div class="w-12 h-12 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                    </div>
+                    <div class="mt-2 text-center">
+                        <div class="font-semibold">Analysis</div>
+                        <div class="text-sm text-gray-500">Processing insights</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Left Panel: Authorization/Progress -->
+        <div class="bg-zinc-50 shadow-md rounded-lg p-6">
+            <div id="auth-content" class="text-center">
+                <h2 class="text-xl font-bold mb-4">Connect Your YouTube Account</h2>
+                <p class="text-zinc-600 mb-6">
+                    Allow Lumina to access your watch history to generate psychological insights.
+                    Your data is kept private and secure.
+                </p>
+                <button id="auth-button" class="bg-red-500 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                    Connect YouTube Account
+                </button>
+            </div>
+
+            <!-- Progress Log (initially hidden) -->
+            <div id="progress-log" class="hidden">
+                <h2 class="text-xl font-bold mb-4">Analysis Progress</h2>
+                <div class="font-mono text-sm bg-zinc-800 text-green-500 p-4 rounded-lg h-64 overflow-y-auto">
+                    <div class="grain absolute inset-0 opacity-50 mix-blend-multiply"></div>
+                    <div id="log-content">
+                        > Waiting to begin analysis...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Results (initially hidden) -->
+        <div id="results-panel" class="bg-zinc-50 shadow-md rounded-lg p-6 hidden">
+            <div id="results-content">
+                <!-- Results will be dynamically inserted here -->
+            </div>
+            <div class="mt-6 flex justify-end space-x-4">
+                <button onclick="copyResultsAsMarkdown()" class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors">
+                    Copy as Markdown
+                </button>
+                <button onclick="downloadResults()" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors">
+                    Download Report
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global state
+let messageQueue = [];
+let isTyping = false;
+let currentAnalysis = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeUI();
+});
+
+function initializeUI() {
+    const authButton = document.getElementById('auth-button');
+    if (authButton) {
+        authButton.addEventListener('click', startAuth);
+    }
+}
+
+function startAuth() {
+    // Redirect to our OAuth route
+    window.location.href = "{{ url_for('youtube_auth') }}";
+}
+
+function updateProgress(message) {
+    addToMessageQueue(message);
+}
+
+function addToMessageQueue(message) {
+    messageQueue.push(message);
+    if (!isTyping) {
+        typeNextMessage();
+    }
+}
+
+function typeNextMessage() {
+    if (messageQueue.length === 0) {
+        isTyping = false;
+        return;
+    }
+
+    isTyping = true;
+    const message = messageQueue.shift();
+    const logEntry = document.createElement('div');
+    logEntry.className = 'log-entry';
+    logEntry.innerHTML = `> <span class="vidiprinter"></span>`;
+    document.getElementById('log-content').appendChild(logEntry);
+    
+    typeVidiprinter(logEntry.querySelector('.vidiprinter'), message, () => {
+        document.getElementById('log-content').scrollTop = document.getElementById('log-content').scrollHeight;
+        setTimeout(typeNextMessage, 50);
+    });
+}
+
+function typeVidiprinter(element, text, onComplete, index = 0) {
+    if (index < text.length) {
+        element.textContent += text[index];
+        setTimeout(() => typeVidiprinter(element, text, onComplete, index + 1), 10);
+    } else {
+        onComplete();
+    }
+}
+
+function showResults(analysis) {
+    currentAnalysis = analysis;
+    const resultsPanel = document.getElementById('results-panel');
+    const resultsContent = document.getElementById('results-content');
+    
+    // Build the results HTML
+    let html = `
+        <div class="space-y-6">
+            <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="text-xl font-bold mb-3">Personality Traits</h3>
+                <div class="flex flex-wrap gap-2">
+                    ${analysis.personality_traits.map(trait => 
+                        `<span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">${trait}</span>`
+                    ).join('')}
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="text-xl font-bold mb-3">Primary Interests</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    ${analysis.primary_interests.map(interest =>
+                        `<div class="bg-gray-50 p-3 rounded">${interest}</div>`
+                    ).join('')}
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="text-xl font-bold mb-3">Patterns & Insights</h3>
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="font-semibold">Emotional Patterns</h4>
+                        <p class="text-gray-700">${analysis.emotional_patterns}</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold">Learning Style</h4>
+                        <p class="text-gray-700">${analysis.learning_style}</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold">Cultural Preferences</h4>
+                        <p class="text-gray-700">${analysis.cultural_preferences}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="text-xl font-bold mb-3">Recommendations</h3>
+                <ul class="list-disc list-inside space-y-2">
+                    ${analysis.recommendations.map(rec =>
+                        `<li class="text-gray-700">${rec}</li>`
+                    ).join('')}
+                </ul>
+            </div>
+        </div>
+    `;
+    
+    resultsContent.innerHTML = html;
+    resultsPanel.classList.remove('hidden');
+}
+
+function updateStepStatus(step, status) {
+    const steps = ['auth', 'fetch', 'analyze'];
+    const colors = {
+        pending: 'bg-gray-200 text-gray-400',
+        active: 'bg-blue-500 text-white',
+        complete: 'bg-green-500 text-white'
+    };
+
+    steps.forEach(s => {
+        const stepEl = document.getElementById(`${s}-step`).querySelector('div');
+        if (s === step) {
+            stepEl.className = `w-12 h-12 rounded-full flex items-center justify-center ${colors[status]}`;
+        } else if (steps.indexOf(s) < steps.indexOf(step)) {
+            stepEl.className = `w-12 h-12 rounded-full flex items-center justify-center ${colors.complete}`;
+        }
+    });
+}
+
+// Connect to SSE stream when OAuth callback occurs
+function startAnalysisStream(sessionId) {
+    console.log('Connecting to event stream...');
+    const eventSource = new EventSource(`/watch-history/stream/${sessionId}`, {
+        withCredentials: true // Important for session handling
+    });
+    
+    eventSource.onopen = function() {
+        console.log('EventSource connection opened');
+        updateProgress('Connected. Starting analysis...');
+    };
+    
+    eventSource.onerror = function(error) {
+        console.error('EventSource error:', error);
+        updateProgress('Connection error. Please try again.');
+        eventSource.close();
+    };
+    
+    eventSource.addEventListener('message', function(event) {
+        console.log('Received message:', event.data);
+        try {
+            const data = JSON.parse(event.data);
+            
+            if (data.type === 'progress') {
+                updateProgress(data.message);
+                if (data.step) {
+                    updateStepStatus(data.step, data.status);
+                }
+            } else if (data.type === 'complete') {
+                showResults(data.analysis);
+                eventSource.close();
+            } else if (data.type === 'error') {
+                updateProgress(`Error: ${data.message}`);
+                eventSource.close();
+            }
+        } catch (e) {
+            console.error('Error parsing message:', e);
+            updateProgress('Error processing server message');
+        }
+    });
+
+    // Add a safety timeout
+    setTimeout(() => {
+        if (eventSource.readyState !== EventSource.CLOSED) {
+            updateProgress('Analysis timed out. Please try again.');
+            eventSource.close();
+        }
+    }, 300000); // 5 minutes timeout
+}
+
+async function copyResultsAsMarkdown() {
+    if (!currentAnalysis) return;
+    
+    try {
+        const markdown = generateMarkdown(currentAnalysis);
+        await navigator.clipboard.writeText(markdown);
+        
+        const button = document.querySelector('button');
+        const originalText = button.innerText;
+        button.innerText = 'Copied!';
+        setTimeout(() => button.innerText = originalText, 2000);
+    } catch (err) {
+        console.error('Failed to copy:', err);
+        alert('Failed to copy to clipboard');
+    }
+}
+
+function generateMarkdown(analysis) {
+    return `# YouTube Watch History Analysis
+
+## Personality Traits
+${analysis.personality_traits.map(trait => `- ${trait}`).join('\n')}
+
+## Primary Interests
+${analysis.primary_interests.map(interest => `- ${interest}`).join('\n')}
+
+## Emotional Patterns
+${analysis.emotional_patterns}
+
+## Learning Style
+${analysis.learning_style}
+
+## Cultural Preferences
+${analysis.cultural_preferences}
+
+## Behavioral Insights
+${analysis.behavioral_insights}
+
+## Recommendations
+${analysis.recommendations.map(rec => `- ${rec}`).join('\n')}
+`;
+}
+
+function downloadResults() {
+    if (!currentAnalysis) return;
+    
+    const markdown = generateMarkdown(currentAnalysis);
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'youtube-analysis.md';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Page loaded');
+    {% if start_analysis and session_id %}
+        console.log('Starting analysis with session ID: {{ session_id }}');
+        document.getElementById('auth-content').classList.add('hidden');
+        document.getElementById('progress-log').classList.remove('hidden');
+        
+        // Add delay to ensure EventSource connection is established
+        setTimeout(() => {
+            startAnalysisStream('{{ session_id }}');
+        }, 1000);
+    {% else %}
+        console.log('No analysis to start');
+    {% endif %}
+});
+</script>
+{% endblock %}

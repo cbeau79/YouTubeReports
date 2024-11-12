@@ -1,19 +1,19 @@
 # Import necessary modules
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, Response, stream_with_context, send_from_directory, current_app, send_file
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, Response, stream_with_context, send_from_directory, current_app, send_file, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from datetime import datetime, timedelta
+from pytz import timezone
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from flask_mail import Mail, Message
 from sqlalchemy.exc import SQLAlchemyError
 import os
 import json
-from datetime import datetime, timedelta
-from pytz import timezone
 from config import Config
-from youtube_utils import extract_channel_id, fetch_channel_data, extract_video_id, get_video_data
-from openai_utils import generate_channel_report, generate_video_summary
+from youtube_utils import extract_channel_id, fetch_channel_data, extract_video_id, get_video_data, get_watch_history
+from openai_utils import generate_channel_report, generate_video_summary, analyze_watch_history
 import logging
 from logging.handlers import RotatingFileHandler
 from export_utils import (
@@ -24,11 +24,27 @@ from export_utils import (
 )
 from io import BytesIO
 from waitress import serve
+from google_auth_oauthlib.flow import Flow
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
+import uuid
+import time
 
+
+### -------------------------------------------------------------------------------------------------------
+### CONFIG ------------------------------------------------------------------------------------------------
+### -------------------------------------------------------------------------------------------------------
+
+# Google OAuth Config
+CLIENT_SECRETS_FILE = "auth/client_secrets.json"
+SCOPES = ['https://www.googleapis.com/auth/youtube.readonly']
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1' 
+
+# Flask app initialization
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Configure logging
+# Logging
 if not app.debug:
     if not os.path.exists('logs'):
         os.mkdir('logs')
@@ -42,11 +58,16 @@ if not app.debug:
     app.logger.setLevel(logging.INFO)
     app.logger.info('Lumina startup')
 
+# Database config
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 mail = Mail(app)
+
+### -------------------------------------------------------------------------------------------------------
+### DATABASE MODELS ---------------------------------------------------------------------------------------
+### -------------------------------------------------------------------------------------------------------
 
 # Helper function to get current time in local timezone
 def get_local_time():
@@ -153,6 +174,18 @@ class UserVideoAccess(db.Model):
     summary = db.relationship('VideoSummary', back_populates='user_accesses')
     __table_args__ = (db.UniqueConstraint('user_id', 'summary_id', name='uq_user_video'),)
 
+class WatchHistoryAnalysis(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    analysis_data = db.Column(db.Text, nullable=False)
+    raw_history_data = db.Column(db.Text, nullable=True)
+    date_created = db.Column(db.DateTime(timezone=True), nullable=False, default=get_local_time)
+    user = db.relationship('User', backref=db.backref('watch_history_analyses', lazy=True))
+
+### -------------------------------------------------------------------------------------------------------
+### FUNCTIONS ---------------------------------------------------------------------------------------------
+### -------------------------------------------------------------------------------------------------------
+
 # User loader function for Flask-Login
 @login_manager.user_loader
 def load_user(user_id):
@@ -220,11 +253,282 @@ def seed_user_account(user_id):
         db.session.rollback()
         current_app.logger.error(f"Unexpected error seeding account for user {user_id}: {str(e)}")
         return False
+    
+def send_reset_email(user):
+    token = user.get_reset_token()
+    msg = Message('Password Reset Request',
+                  sender=app.config['MAIL_DEFAULT_SENDER'],
+                  recipients=[user.email])
+    msg.body = f'''To reset your password, visit the following link:
+{url_for('reset_token', token=token, _external=True)}
 
-# Routes
+If you did not make this request then simply ignore this email and no changes will be made.
+'''
+    try:
+        print(f"Attempting to send email to {user.email}")
+        print(f"MAIL_SERVER: {app.config['MAIL_SERVER']}")
+        print(f"MAIL_PORT: {app.config['MAIL_PORT']}")
+        print(f"MAIL_USE_TLS: {app.config['MAIL_USE_TLS']}")
+        print(f"MAIL_USERNAME: {app.config['MAIL_USERNAME']}")
+        print(f"MAIL_DEFAULT_SENDER: {app.config['MAIL_DEFAULT_SENDER']}")
+        # Don't print the actual password, just check if it's set
+        print(f"MAIL_PASSWORD is set: {'Yes' if app.config['MAIL_PASSWORD'] else 'No'}")
+        
+        mail.send(msg)
+        print("Email sent successfully")
+    except Exception as e:
+        print(f"Failed to send email: {str(e)}")
+        # You might want to log this error or handle it appropriately
+        raise  # Re-raise the exception to see the full traceback
+
+def track_event(event_name, event_params=None):
+    """
+    Track server-side events to Google Analytics 4 with detailed logging
+    """
+    app.logger.info(f"Attempting to track GA event: {event_name}")
+    
+    measurement_id = app.config.get('GOOGLE_ANALYTICS_ID')
+    api_secret = os.environ.get('GA4_API_SECRET')
+    
+    if not measurement_id:
+        app.logger.warning("GA tracking disabled - GOOGLE_ANALYTICS_ID not set")
+        return
+    if not api_secret:
+        app.logger.warning("GA tracking disabled - GA4_API_SECRET not set")
+        return
+        
+    try:
+        import requests
+        url = f'https://www.google-analytics.com/mp/collect?measurement_id={measurement_id}&api_secret={api_secret}'
+        
+        payload = {
+            'client_id': 'server-side',
+            'events': [{
+                'name': event_name,
+                'params': event_params or {}
+            }]
+        }
+        
+        app.logger.debug(f"Sending GA event to {url}")
+        app.logger.debug(f"Payload: {payload}")
+        
+        response = requests.post(url, json=payload, timeout=2)
+        
+        # 204 is success for GA4
+        if response.status_code in [200, 204]:
+            app.logger.info(f"Successfully tracked GA event: {event_name}")
+        else:
+            app.logger.error(f"Failed to track GA event. Status code: {response.status_code}")
+            app.logger.error(f"Response content: {response.text}")
+            
+    except Exception as e:
+        app.logger.error(f"Exception tracking GA event: {str(e)}", exc_info=True)
+
+### -------------------------------------------------------------------------------------------------------
+### ROUTES ------------------------------------------------------------------------------------------------
+### -------------------------------------------------------------------------------------------------------
+
 @app.route('/images/<path:filename>')
 def serve_image(filename):
     return send_from_directory(app.config['IMAGES_FOLDER'], filename)
+
+@app.route('/debug/ga-test')
+@login_required
+def test_ga():
+    if current_user.is_authenticated:  # Restrict to internal users
+        track_event('debug_test', {
+            'test_time': datetime.now().isoformat(),
+            'user': current_user.email
+        })
+        return "GA test event sent - check logs"
+    return "Unauthorized", 403
+
+@app.route('/debug/ga-config')
+@login_required
+def check_ga_config():
+    if current_user.is_authenticated:
+        return {
+            'GA_ID_SET': bool(app.config.get('GOOGLE_ANALYTICS_ID')),
+            'GA_ID_VALUE': app.config.get('GOOGLE_ANALYTICS_ID')[:5] + '...' if app.config.get('GOOGLE_ANALYTICS_ID') else None,
+            'GA_SECRET_SET': bool(os.environ.get('GA4_API_SECRET')),
+            'GA_SECRET_LENGTH': len(os.environ.get('GA4_API_SECRET', ''))
+        }
+    return "Unauthorized", 403
+
+@app.route('/watch-history')
+@login_required
+def watch_history():
+    return render_template('watch_history.html')
+
+@app.route('/watch-history/stream/<session_id>')
+@login_required
+def stream_analysis(session_id):
+    def generate():
+        app.logger.info(f"Starting analysis stream for session {session_id}")
+        
+        if 'credentials' not in session:
+            app.logger.error("No credentials found in session")
+            yield 'data: ' + json.dumps({
+                'type': 'error',
+                'message': 'No credentials found. Please reconnect your YouTube account.'
+            }) + '\n\n'
+            return
+            
+        app.logger.info("Found credentials in session, starting analysis")
+        
+        try:
+            credentials = Credentials(**session['credentials'])
+            
+            yield 'data: ' + json.dumps({
+                'type': 'progress',
+                'message': 'Connected to YouTube. Fetching watch history...',
+                'step': 'fetch',
+                'status': 'active'
+            }) + '\n\n'
+
+            # Get watch history
+            history_data = get_watch_history(credentials)
+            if not history_data:
+                yield 'data: ' + json.dumps({
+                    'type': 'error',
+                    'message': 'Failed to fetch watch history.'
+                }) + '\n\n'
+                return
+
+            yield 'data: ' + json.dumps({
+                'type': 'progress',
+                'message': f'Retrieved {len(history_data)} videos from your history.',
+                'step': 'fetch',
+                'status': 'complete'
+            }) + '\n\n'
+
+            yield 'data: ' + json.dumps({
+                'type': 'progress',
+                'message': 'Analyzing your viewing patterns...',
+                'step': 'analyze',
+                'status': 'active'
+            }) + '\n\n'
+
+            # Analyze the history
+            analysis_json = analyze_watch_history(history_data)
+            analysis = json.loads(analysis_json)
+
+            # Save to database
+            new_analysis = WatchHistoryAnalysis(
+                user_id=current_user.id,
+                analysis_data=analysis_json,
+                raw_history_data=json.dumps(history_data)
+            )
+            db.session.add(new_analysis)
+            db.session.commit()
+
+            yield 'data: ' + json.dumps({
+                'type': 'complete',
+                'analysis': analysis
+            }) + '\n\n'
+
+        except Exception as e:
+            app.logger.error(f"Error in stream_analysis: {str(e)}")
+            yield 'data: ' + json.dumps({
+                'type': 'error',
+                'message': str(e)
+            }) + '\n\n'
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'Content-Type': 'text/event-stream',
+        }
+    )
+
+@app.route('/auth/youtube')
+@login_required
+def youtube_auth():
+    try:
+        flow = Flow.from_client_secrets_file(
+            CLIENT_SECRETS_FILE,
+            scopes=SCOPES
+        )
+        
+        redirect_uri = 'http://localhost:5000/auth/youtube/callback'
+        flow.redirect_uri = redirect_uri
+
+        # Generate authorization URL and state
+        authorization_url, state = flow.authorization_url(
+            access_type='offline',
+            include_granted_scopes='true',
+            prompt='consent'
+        )
+
+        # Store state in session
+        session['oauth_state'] = state
+        
+        app.logger.info(f"Initiating YouTube OAuth flow for user {current_user.id}")
+        app.logger.info(f"Redirect URI: {redirect_uri}")
+        app.logger.info(f"State parameter: {state}")
+        
+        return redirect(authorization_url)
+
+    except Exception as e:
+        app.logger.error(f"Error initiating OAuth flow: {str(e)}")
+        app.logger.error(f"Exception traceback: ", exc_info=True)
+        flash('Failed to connect to YouTube. Please try again.', 'error')
+        return redirect(url_for('watch_history'))
+
+@app.route('/auth/youtube/callback')
+def oauth2callback():
+    try:
+        state = session.get('oauth_state')
+        if not state:
+            raise ValueError("No state in session")
+            
+        app.logger.info(f"Starting OAuth callback processing")
+        
+        flow = Flow.from_client_secrets_file(
+            CLIENT_SECRETS_FILE,
+            scopes=SCOPES,
+            state=state
+        )
+        flow.redirect_uri = 'http://localhost:5000/auth/youtube/callback'
+
+        # Use the authorization server's response to fetch the OAuth 2.0 tokens
+        authorization_response = request.url
+        flow.fetch_token(authorization_response=authorization_response)
+
+        # Store credentials in session
+        credentials = flow.credentials
+        session['credentials'] = {
+            'token': credentials.token,
+            'refresh_token': credentials.refresh_token,
+            'token_uri': credentials.token_uri,
+            'client_id': credentials.client_id,
+            'client_secret': credentials.client_secret,
+            'scopes': credentials.scopes
+        }
+
+        # Generate session ID for streaming
+        session_id = str(uuid.uuid4())
+        session['analysis_session_id'] = session_id
+        
+        app.logger.info(f"OAuth callback successful. Session ID: {session_id}")
+        app.logger.info(f"Credentials stored in session: {bool(session.get('credentials'))}")
+        
+        response = render_template(
+            'watch_history.html',
+            session_id=session_id,
+            start_analysis=True
+        )
+        
+        app.logger.info("Template rendered, returning response")
+        return response
+
+    except Exception as e:
+        app.logger.error(f"Error in oauth2callback: {str(e)}")
+        app.logger.error("Exception traceback: ", exc_info=True)
+        flash('Failed to complete YouTube authentication.', 'error')
+        return redirect(url_for('watch_history'))
 
 @app.route('/')
 def index():
@@ -302,6 +606,10 @@ def register():
                 # Continue anyway - unseeded account is better than no account
             
             db.session.commit()
+
+            track_event('user_registered', {
+                'user_email_domain': email.split('@')[1]
+            })
             
             flash('Registration successful! Your account has been pre-loaded with some example analyses. Please log in.')
             return redirect(url_for('login'))
@@ -411,32 +719,6 @@ def export_summary(summary_id, format):
         flash('Error generating export')
         return redirect(url_for('dashboard'))
 
-def send_reset_email(user):
-    token = user.get_reset_token()
-    msg = Message('Password Reset Request',
-                  sender=app.config['MAIL_DEFAULT_SENDER'],
-                  recipients=[user.email])
-    msg.body = f'''To reset your password, visit the following link:
-{url_for('reset_token', token=token, _external=True)}
-
-If you did not make this request then simply ignore this email and no changes will be made.
-'''
-    try:
-        print(f"Attempting to send email to {user.email}")
-        print(f"MAIL_SERVER: {app.config['MAIL_SERVER']}")
-        print(f"MAIL_PORT: {app.config['MAIL_PORT']}")
-        print(f"MAIL_USE_TLS: {app.config['MAIL_USE_TLS']}")
-        print(f"MAIL_USERNAME: {app.config['MAIL_USERNAME']}")
-        print(f"MAIL_DEFAULT_SENDER: {app.config['MAIL_DEFAULT_SENDER']}")
-        # Don't print the actual password, just check if it's set
-        print(f"MAIL_PASSWORD is set: {'Yes' if app.config['MAIL_PASSWORD'] else 'No'}")
-        
-        mail.send(msg)
-        print("Email sent successfully")
-    except Exception as e:
-        print(f"Failed to send email: {str(e)}")
-        # You might want to log this error or handle it appropriately
-        raise  # Re-raise the exception to see the full traceback
 
 @app.route("/reset_password", methods=['GET', 'POST'])
 def reset_request():
@@ -517,6 +799,10 @@ def logout():
 @login_required
 def process_url():
     def generate():
+        start_time = time.time()
+        success = False
+        existing_report = False
+        existing_summary = False
         try:
             app.logger.info("Starting /process_url endpoint")
             
@@ -539,8 +825,13 @@ def process_url():
             app.logger.info(f"Channel ID extraction result: {channel_id}")
             
             if channel_id:
-                app.logger.info(f"Processing as channel. Channel ID: {channel_id}")
+                app.logger.info(f"Processing URL as channel, Channel ID: {channel_id}")
                 yield json.dumps({'type': 'progress', 'message': 'Channel URL detected. Processing channel analysis '}) + '\n'
+
+                # Track analysis attempt
+                track_event('content_analysis_started', {
+                    'type': 'channel'
+                })
                 
                 # Check for existing report
                 existing_report = ChannelReport.query.filter_by(channel_id=channel_id).first()
@@ -571,6 +862,9 @@ def process_url():
                     
                     redirect_url = url_for('dashboard', new_report=existing_report.id)
                     app.logger.info(f"Redirecting to: {redirect_url}")
+                    
+                    success = True
+                    
                     yield json.dumps({
                         'type': 'complete',
                         'redirect_url': redirect_url
@@ -623,6 +917,9 @@ def process_url():
 
                 redirect_url = url_for('dashboard', new_report=new_report.id)
                 app.logger.info(f"Redirecting to: {redirect_url}")
+
+                success = True
+
                 yield json.dumps({
                     'type': 'complete',
                     'redirect_url': redirect_url
@@ -633,13 +930,18 @@ def process_url():
                 app.logger.info("Attempting to process as video URL")
                 video_id = extract_video_id(url)
                 app.logger.info(f"Video ID extraction result: {video_id}")
+
+                # Track analysis attempt
+                track_event('content_analysis_started', {
+                    'type': 'video_summary'
+                })
                 
                 if not video_id:
                     app.logger.error("Invalid YouTube URL - not a channel or video URL")
                     yield json.dumps({'type': 'error', 'message': 'Invalid YouTube URL'}) + '\n'
                     return
 
-                yield json.dumps({'type': 'progress', 'message': 'Video URL detected. Processing video analysis '}) + '\n'
+                yield json.dumps({'type': 'progress', 'message': 'Video URL detected, creating video summary '}) + '\n'
 
                 # Check for existing summary
                 existing_summary = VideoSummary.query.filter_by(video_id=video_id).first()
@@ -670,6 +972,9 @@ def process_url():
                     
                     redirect_url = url_for('dashboard', new_summary=existing_summary.id)
                     app.logger.info(f"Redirecting to: {redirect_url}")
+                    
+                    success = True
+                    
                     yield json.dumps({
                         'type': 'complete',
                         'redirect_url': redirect_url
@@ -679,6 +984,7 @@ def process_url():
                 # Generate new summary
                 app.logger.info("Fetching video data for new summary")
                 yield json.dumps({'type': 'progress', 'message': 'Fetching video data '}) + '\n'
+
                 video_data = get_video_data(video_id)
 
                 if not video_data:
@@ -720,13 +1026,35 @@ def process_url():
 
                 redirect_url = url_for('dashboard', new_summary=new_summary.id)
                 app.logger.info(f"Redirecting to: {redirect_url}")
+
+                success = True
+
                 yield json.dumps({
                     'type': 'complete',
                     'redirect_url': redirect_url
                 }) + '\n'
+            
+            # Track completion
+            if success:
+                track_event('content_analysis_completed', {
+                    'type': 'channel' if channel_id else 'video',
+                    'processing_time': time.time() - start_time,
+                    'new_content': not (existing_report or existing_summary)
+                })
+            else:
+                track_event('content_analysis_failed', {
+                    'type': 'channel' if channel_id else 'video',
+                    'reason': 'processing_failed',
+                    'processing_time': time.time() - start_time
+                })
 
         except Exception as e:
             app.logger.error(f"Error in process_url: {str(e)}", exc_info=True)
+            track_event('content_analysis_failed', {
+                'reason': 'exception',
+                'error_message': str(e),
+                'processing_time': time.time() - start_time
+            })
             yield json.dumps({'type': 'error', 'message': f'An unexpected error occurred: {str(e)}'}) + '\n'
 
     return Response(stream_with_context(generate()), content_type='application/json')
@@ -834,7 +1162,8 @@ if __name__ == '__main__':
     # app.run(host='0.0.0.0', port=5000, debug=True)  # Run in debug mode for development
 
     # Production-like server but still easy to run
-    serve(app, host='0.0.0.0', port=5000, threads=4)
+    from waitress import serve
+    serve(app, host='0.0.0.0', port=5000, threads=4, channel_timeout=300)
 
 
 ### OUTDATED ROUTES

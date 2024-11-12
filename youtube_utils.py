@@ -17,6 +17,8 @@ import stat
 import shutil
 import tempfile
 from cookie_manager import CookieValidator
+from googleapiclient.discovery import build
+from flask import current_app as app
 
 # Use configuration values
 API_KEY = Config.YOUTUBE_API_KEY # os.environ.get('YOUTUBE_API_KEY')
@@ -28,6 +30,8 @@ MAX_TOKENS = Config.MAX_TOKENS # app_config['max_tokens']
 COOKIE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "auth/ytc.txt")
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Initialize YouTube API client
 youtube = googleapiclient.discovery.build("youtube", "v3", developerKey=API_KEY)
@@ -78,6 +82,66 @@ def extract_channel_id(url):
                 return None
     
     return None
+
+def get_watch_history(credentials, max_results=200):
+    """Fetch user's watch history using OAuth credentials."""
+    try:
+        # Build YouTube API client with authenticated credentials
+        youtube = build('youtube', 'v3', credentials=credentials)
+        
+        app.logger.info("Initialized YouTube API client")
+        history_items = []
+        
+        # First, get the user's liked videos as a proxy for watch history
+        # (Direct watch history access is more restricted)
+        request = youtube.videos().list(
+            part="snippet,contentDetails,statistics",
+            maxResults=min(50, max_results),
+            myRating="like"
+        )
+        
+        while request and len(history_items) < max_results:
+            response = request.execute()
+            app.logger.info(f"Retrieved {len(response.get('items', []))} videos")
+            
+            for item in response.get('items', []):
+                video_data = {
+                    'title': item['snippet']['title'],
+                    'description': item['snippet']['description'],
+                    'channel_title': item['snippet']['channelTitle'],
+                    'published_at': item['snippet']['publishedAt'],
+                    'duration': parse_youtube_duration(item['contentDetails']['duration']),
+                    'view_count': item['statistics'].get('viewCount', 0),
+                    'like_count': item['statistics'].get('likeCount', 0),
+                    'category_id': item['snippet'].get('categoryId', ''),
+                    'tags': item['snippet'].get('tags', []),
+                    'video_id': item['id']
+                }
+                history_items.append(video_data)
+            
+            # Get next page token for pagination
+            request = youtube.videos().list_next(request, response)
+            if not request:
+                break
+        
+        app.logger.info(f"Total videos retrieved: {len(history_items)}")
+        return history_items[:max_results]
+        
+    except Exception as e:
+        app.logger.error(f"Error fetching watch history: {str(e)}")
+        return None
+
+def parse_youtube_duration(duration):
+    """Convert YouTube duration format (PT1H2M10S) to seconds."""
+    match = re.match(r'PT((\d+)H)?((\d+)M)?((\d+)S)?', duration)
+    if not match:
+        return 0
+        
+    hours = int(match.group(2) or 0)
+    minutes = int(match.group(4) or 0)
+    seconds = int(match.group(6) or 0)
+    
+    return hours * 3600 + minutes * 60 + seconds
 
 def get_video_comments(video_id, max_results=100):
     comments = []

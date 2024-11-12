@@ -1,12 +1,17 @@
 import os
 
 class Config:
+    DEBUG = True
     SECRET_KEY = str(os.environ.get('SECRET_KEY'))
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max-limit
     IMAGES_FOLDER = 'i'
     
+    # Google Analytics configuration
+    GA4_API_SECRET = os.environ.get('GA4_API_SECRET')
+    GOOGLE_ANALYTICS_ID = os.environ.get('GOOGLE_ANALYTICS_ID')
+
     # YouTube API configuration
     YOUTUBE_API_KEY = os.environ.get('YOUTUBE_API_KEY')
     MAX_VIDEOS_TO_FETCH = 50

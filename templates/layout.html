@@ -138,6 +138,7 @@
             <div class="space-x-4 text-lg">
                 {% if current_user.is_authenticated %}
                     <a href="{{ url_for('dashboard') }}" class="hover:text-zinc-200">Dashboard</a>
+                    <!-- a href="{{ url_for('watch_history') }}" class="hover:text-zinc-200">Watch History</a -->
                     <a href="{{ url_for('account') }}" class="hover:text-zinc-200">Account</a>
                     <a href="{{ url_for('logout') }}" class="hover:text-zinc-200">Logout</a>
                 {% else %}
@@ -155,5 +156,60 @@
     <footer class="bg-zinc-800 text-zinc-50 text-center p-4 mt-8">
         <p>&copy; 2024 Lumina. All rights reserved.</p>
     </footer>
+
+{% if config.GOOGLE_ANALYTICS_ID %}
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ config.GOOGLE_ANALYTICS_ID }}"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '{{ config.GOOGLE_ANALYTICS_ID }}');
+
+        // Custom event tracking
+        document.addEventListener('DOMContentLoaded', function() {
+            // Track form submissions
+            document.getElementById('content-form')?.addEventListener('submit', function() {
+                gtag('event', 'content_analysis', {
+                    'event_category': 'Engagement',
+                    'event_label': document.getElementById('content-url').value
+                });
+            });
+
+            // Track report views
+            document.querySelectorAll('.report-card, .report-item').forEach(element => {
+                element.addEventListener('click', function() {
+                    const type = this.classList.contains('channel-report') ? 'channel_report' : 'video_summary';
+                    const id = this.getAttribute('data-id');
+                    gtag('event', 'view_report', {
+                        'event_category': 'Content',
+                        'event_label': type,
+                        'value': id
+                    });
+                });
+            });
+
+            // Track exports
+            document.querySelectorAll('[href*="/export/"]').forEach(link => {
+                link.addEventListener('click', function() {
+                    const format = this.href.includes('pdf') ? 'PDF' : 'Markdown';
+                    gtag('event', 'export_report', {
+                        'event_category': 'Downloads',
+                        'event_label': format
+                    });
+                });
+            });
+        });
+    </script>
+{% endif %}
+
+{% if config.DEBUG and config.GOOGLE_ANALYTICS_ID %}
+    <script>
+        gtag('config', '{{ config.GOOGLE_ANALYTICS_ID }}', {
+            'debug_mode': true
+        });
+    </script>
+{% endif %}
+
 </body>
 </html>

@@ -3,23 +3,6 @@ import json
 from config import Config
 import os
 
-# Load app parameters
-'''
-def load_config():
-    try:
-        with open('config.json', 'r') as config_file:
-            return json.load(config_file)
-    except FileNotFoundError:
-        print("Configuration file 'config.json' not found. Please create it and add your settings.")
-        exit(1)
-    except json.JSONDecodeError:
-        print("Error parsing 'config.json'. Please make sure it's valid JSON.")
-        exit(1)
-
-# Load configuration
-app_config = load_config()
-'''
-
 # Use configuration values
 API_KEY = Config.YOUTUBE_API_KEY # os.environ.get('YOUTUBE_API_KEY')
 OPENAI_API_KEY = Config.OPENAI_API_KEY # os.environ.get('OPENAI_API_KEY')
@@ -27,6 +10,59 @@ OPENAI_MODEL = Config.OPENAI_MODEL # app_config['openai_model']
 MAX_TOKENS = Config.MAX_TOKENS # app_config['max_tokens']
 
 client = OpenAI(api_key=OPENAI_API_KEY)
+
+def analyze_watch_history(history_data):
+    """Analyze watch history data using OpenAI."""
+    prompt = f"""You are a skilled psychologist analyzing a person's YouTube watch history. 
+    The data shows the last 200 videos they've watched. Based on this data, provide deep psychological insights about their personality, interests, and behaviors.
+    
+    Watch History Data:
+    {json.dumps(history_data, indent=2)}
+    
+    Analyze this watch history and provide insights in the following areas:
+    1. Key personality traits evident from their viewing choices
+    2. Primary interests and what they reveal about the person
+    3. Emotional patterns in their content consumption
+    4. Learning style and intellectual preferences
+    5. Cultural preferences and social values
+    6. Behavioral patterns and potential motivations
+    7. Personalized recommendations for personal growth
+    
+    Ensure your analysis is:
+    - Professional but accessible
+    - Based on clear patterns in the data
+    - Focused on constructive insights
+    - Respectful of privacy and avoiding overly personal assumptions
+    
+    Return your analysis in this exact JSON structure:
+    {{
+        "personality_traits": ["trait1", "trait2", "trait3", ...],
+        "primary_interests": ["interest1", "interest2", "interest3", ...],
+        "emotional_patterns": "Detailed analysis of emotional patterns",
+        "learning_style": "Analysis of learning preferences and patterns",
+        "cultural_preferences": "Analysis of cultural and social preferences",
+        "behavioral_insights": "Key behavioral patterns and motivations",
+        "recommendations": ["recommendation1", "recommendation2", "recommendation3", ...]
+    }}
+    """
+
+    try:
+        response = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            response_format={ "type": "json_object" },
+            messages=[
+                {"role": "system", "content": "You are an insightful psychologist who analyzes YouTube viewing patterns."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=4000
+        )
+        
+        return response.choices[0].message.content
+        
+    except Exception as e:
+        logging.error(f"Error in analyze_watch_history: {str(e)}")
+        return json.dumps({"error": str(e)})
 
 # report_data is a JSON formatted file containing channel data
 def generate_channel_report(channel_data):
@@ -50,14 +86,29 @@ def generate_channel_report(channel_data):
     
     # Craft the prompt
     prompt = f"""
-    You are a YouTube content consultant. Analyze the following YouTube channel data and provide a comprehensive report that focuses on insight and understanding. The data is provided in JSON format:
+    <instructions>
+    Role: You are a YouTube content consultant. 
+    Function: 
+        1. Analyze the YouTube channel data provided in <channel_data> and create a comprehensive report that focuses on insight and understanding.
+        2. Using the lists in <content_categories> and <video_formats>, provide the following information:
+            - content_categories: Select up to three categories from the <Content Categories> list that best describe the channel. List them in order of relevance.
+            - video_formats: Identify the primary video format(s) used by the channel from the <Video Formats> list. If multiple formats are used frequently, list up to three in order of prevalence.
+            - content_category_justification: Provide a brief explanation (2-3 sentences) for your categorization choices. What specific elements of the content led you to select these categories and formats?
+            Include this categorization information using the section of the <return_json_template> labelled 'categorisation'.
+    
+    Writing style: Provide your analysis in a clear, structured format. You are a consultant, but use an approachable, friendly writing style that is recongisable to a YouTube audience.
+    
+    Other instructions:
+    - Don't shy away from criticism: if a channel is making mistakes then point them out.
+    - Use specific data points to support your insights and recommendations. 
+    - Do not rush to come up with an answer, take your time.
+    </instructions>
 
     <channel_data>
     {channel_data_str}
     </channel_data>
-    
-    Analyze the above data and present the key insights in the following format: 
 
+    <report_format>
     1. Executive Summary
         1. Content summary (1 or 2 paragraphs - summarise the content strategy being used and why this channel is being successful or failing.)
         2. Channel hosts and personalities (1 or 2 paragraphs - if you don't know anything about the hosts and personalities, it's ok to say so. If you have knowledge about the hosts and personalities outside of the provided data, please feel free to use that information.)
@@ -74,14 +125,9 @@ def generate_channel_report(channel_data):
         1. Provide 3 data-driven recommendations for growth of the channel, each with a paragraph of rationale. Focus your answers on how this channel in particular can grow quickly, either by relying on their current strategy, or by pivoting to another strategy. If there are other channels in their niche that are being more successful, explain how this channel could emulate their success.
     6. Limitations:
         1. If you identify any limitations in the data provided, please mention them here.
+    </report_format>
 
-    Provide your analysis in a clear, structured format.
-    Use specific data points to support your insights and recommendations. 
-    Do not rush to come up with an answer, take your time.
-
-    When analyzing the YouTube channel please categorize it according to the following lists:
-
-    <Content Categories>
+    <content_categories>
     Entertainment
     Education
     Gaming
@@ -102,9 +148,9 @@ def generate_channel_report(channel_data):
     Arts & Crafts
     Vlogs & Personal
     Family & Parenting
-    </Content Categories>
+    </content_categories>
 
-    <Video Formats>
+    <video_formats>
     Tutorial/How-To
     Review
     Vlog
@@ -125,20 +171,17 @@ def generate_channel_report(channel_data):
     Explainer
     Product Demonstration
     Debate/Discussion
-    </Video Formats>
-
-    Please provide the following information:
-
-    content_categories: Select up to three categories from the <Content Categories> list that best describe the channel. List them in order of relevance.
-    video_formats: Identify the primary video format(s) used by the channel from the <Video Formats> list. If multiple formats are used frequently, list up to three in order of prevalence.
-    content_category_justification: Provide a brief explanation (2-3 sentences) for your categorization choices. What specific elements of the content led you to select these categories and formats?
-
-    Please include this categorization information in your analysis of the YouTube channel, using the section of the JSON template labelled 'categorisation'.
+    </video_formats>
 
     Use this JSON template to format your results:
 
+    <return_json_template>
     {json_template_report}
+    </return_json_template>
     """
+
+    with open('prompt.txt', 'w') as file:
+        file.write(prompt)
 
     # Interface with OpenAI
     try:
