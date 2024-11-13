@@ -218,9 +218,12 @@ def save_json_to_file(data, channel_id):
     return filename
 
 def seed_user_account(user_id):
+    
     # List of pre-selected channel IDs and video IDs for seeding
-    sample_channel_ids = ['UCLXo7UDZvByw2ixzpQCufnA', 'UC7IcJI8PUf5Z3zKxnZvTBog', 'UCbu2SsF-Or3Rsn3NxqODImw']
-    sample_video_ids = ['YGfJeH5HRDQ', 'QS5-Z-oP-Hw', 'mE0-ks3RcOU']
+    # VOX, SCHOOL OF LIFE, COLORS
+    # RETIRE, AI SCALING, NEGATIVE THOUGHTS
+    sample_channel_ids = ['UCLXo7UDZvByw2ixzpQCufnA', 'UC7IcJI8PUf5Z3zKxnZvTBog', 'UC2Qw1dzXDBAZPwS7zm37g8g']
+    sample_video_ids = ['ZT9NpPe0wRg', 'GrloGdp5wdc', 'DeE8MIfl69M']
 
     try:
         user = User.query.get(user_id)
