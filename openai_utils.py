@@ -181,6 +181,11 @@ def generate_channel_report(channel_data):
     with open('prompt.txt', 'w') as file:
         file.write(prompt)
 
+    prompt_chars = len(prompt)
+    est_tokens = prompt_chars/4
+
+    print(f"Length of prompt: {prompt_chars} - Estimated token length: {est_tokens}")
+
     # Interface with OpenAI
     try:
         response = client.chat.completions.create(

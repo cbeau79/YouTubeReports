@@ -546,6 +546,9 @@ def fetch_channel_data(channel_id):
             for video in channel_data['videos'][:MAX_VIDEOS_FOR_SUBTITLES]:
                 subtitles = get_video_subtitles(video['youtube_video_id'])
                 if subtitles:
+                    if len(subtitles) > 8000:
+                        subtitles = subtitles[:8000]
+                    
                     video['subtitles'] = subtitles
                     print(f"Retrieved subtitles for video: {video['title']}")
                 else:
