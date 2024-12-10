@@ -367,7 +367,7 @@ def get_video_subtitles(video_id):
             logging.error("Failed to create temporary cookie file")
             return None
         
-        # Create yt-dlp options
+        # Create yt-dlp options with format specification
         ydl_opts = {
             'nocheckcertificate': True,
             'no_warnings': True,
@@ -379,7 +379,9 @@ def get_video_subtitles(video_id):
             'cookiefile': temp_cookie_file,
             'no_cache_dir': True,
             'no_overwrites': True,
-            'no_cookies': True
+            'no_cookies': True,
+            'format': 'best',
+            'extract_flat': True 
         }
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -400,34 +402,24 @@ def get_video_subtitles(video_id):
                 logging.info("Extracting video info...")
                 info = ydl.extract_info(video_url, download=False)
                 logging.debug(f"Video info extracted: {info.keys()}")
-                
-                subtitle_formats = ['.en.vtt', '.en-US.vtt', '.en.ttml', '.en-US.ttml', '.en.srv3', '.en-US.srv3']
-                
+                                
                 # Check for and download subtitles
-                if 'subtitles' in info and ('en' in info['subtitles'] or 'en-US' in info['subtitles']):
-                    logging.info("Manual English subtitles found. Downloading...")
-                    ydl.download([video_url])
-                elif 'automatic_captions' in info and ('en' in info['automatic_captions'] or 'en-US' in info['automatic_captions']):
+                if 'automatic_captions' in info and ('en' in info['automatic_captions'] or 'en-US' in info['automatic_captions']):
                     logging.info("Automatic English captions found. Downloading...")
-                    ydl.download([video_url])
-                else:
-                    logging.warning(f"No English subtitles or captions available for video: {video_id}")
-                    return None
-
-                # Process the subtitle file
-                for subtitle_ext in subtitle_formats:
-                    subtitle_filename = os.path.join(temp_dir, f"{video_id}{subtitle_ext}")
-                    logging.info(f"Looking for subtitle file: {subtitle_filename}")
                     
-                    if os.path.exists(subtitle_filename):
-                        logging.info(f"Subtitle file found. Reading content...")
-                        with open(subtitle_filename, 'r', encoding='utf-8') as f:
-                            subtitle_content = f.read()
-                        
-                        # Clean up the subtitle content
-                        subtitles_text = clean_subtitle_text(subtitle_content)
-                        logging.info("Subtitles successfully extracted and processed.")
-                        break  # Exit loop once we have successful extraction
+                    try:
+                        srv1_url = next(item["url"] for item in info["automatic_captions"]["en"] if item["ext"] == "srv1")
+                    except StopIteration:
+                        logging.error("No SRV1 format found")
+                    
+                    response = requests.get(srv1_url)
+
+                    if response.status_code == 200:
+                        subtitles_text = extract_transcript_text(response.text)
+
+                else:
+                    logging.warning(f"No English captions available for video: {video_id}")
+                    return None
 
     except Exception as e:
         logging.error(f"Error in subtitle extraction: {str(e)}")
@@ -504,6 +496,53 @@ def clean_subtitle_text(subtitle_content):
     text = re.sub(r'(?<=[.!?])\s*(?=[A-Z])', ' ', text)
     
     return text
+
+def extract_transcript_text(transcript_content: str) -> str:
+    """
+    Extracts plain text from an SRT-like transcript format, removing all XML tags
+    and timing information.
+
+    Args:
+        transcript_content (str): The raw transcript content containing XML tags and timing info
+
+    Returns:
+        str: Clean text with just the spoken content, with proper spacing between segments
+
+    Example:
+        >>> content = '''<transcript>
+        ... <text start="1.0" dur="2.0">Hello world</text>
+        ... <text start="3.0" dur="2.0">How are you</text>
+        ... </transcript>'''
+        >>> print(extract_transcript_text(content))
+        'Hello world How are you'
+    """
+
+    try:
+        # Strip out all XML tags except text content
+        text_pattern = r'<text[^>]*>(.*?)</text>'
+        text_segments = re.findall(text_pattern, transcript_content)
+
+        if not text_segments:
+            raise ValueError("No valid text segments found in transcript")
+
+        # Join segments with a space and clean up any extra whitespace
+        clean_text = ' '.join(text_segments)
+        
+        # Clean up whitespace issues
+        clean_text = re.sub(r'\s+', ' ', clean_text)  # Multiple spaces to single
+        clean_text = re.sub(r'^\s+|\s+$', '', clean_text)  # Trim ends
+        
+        # Fix any obvious artifacts
+        clean_text = clean_text.replace('&amp;', '&')
+        clean_text = clean_text.replace('&quot;', '"')
+        clean_text = clean_text.replace('&apos;', "'")
+        clean_text = clean_text.replace('&lt;', '<')
+        clean_text = clean_text.replace('&gt;', '>')
+
+        return clean_text
+
+    except Exception as e:
+        raise Exception(f"Error processing transcript: {str(e)}")
 
 def save_json_to_file(data, channel_id):
     if not os.path.exists('reports'):
