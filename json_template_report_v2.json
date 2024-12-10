@@ -1,0 +1,216 @@
+{
+  "consultation_report": {
+    "title": "",
+    "categorisation": [
+        {
+            "content_categories": [
+                "",
+                "",
+                ""
+            ],
+            "content_category_justification": " ",
+            "video_formats": [
+                "",
+                "",
+                ""
+            ]
+        }
+    ],
+    "sections": [
+      {
+        "number": 1,
+        "subtitle": "Executive Summary",
+        "content": [
+            {
+                "sections": [
+                    {
+                        "number": 1,
+                        "subtitle": "Content Summary",
+                        "content": [
+                            "- Point 1",
+                            "- Point 2",
+                            "- Point 3"
+                        ]
+                    },
+                    {
+                        "number": 2,
+                        "subtitle": "Channel hosts and personalities",
+                        "content": [
+                            "- Point 1",
+                            "- Point 2",
+                            "- Point 3"
+                        ]
+                    },
+                    {
+                        "number": 3,
+                        "subtitle": "Channel prominence and competitive landscape",
+                        "content": [
+                            "- Point 1",
+                            "- Point 2",
+                            "- Point 3"
+                        ]
+                    }
+                ]
+            }
+        ]
+      },
+      {
+        "number": 2,
+        "subtitle": "Key Metrics",
+        "content": [
+            {
+                "sections": [
+                    {
+                        "number": 1,
+                        "subtitle": "Average views per video",
+                        "content": [
+                            "- Point 1",
+                            "- Point 2",
+                            "- Point 3"
+                        ]
+                    },
+                    {
+                        "number": 2,
+                        "subtitle": "Top performing video category",
+                        "content": [
+                            "- Point 1",
+                            "- Point 2",
+                            "- Point 3"
+                        ]
+                    },
+                    {
+                        "number": 3,
+                        "subtitle": "Average number of videos published per week",
+                        "content": [
+                            "- Point 1",
+                            "- Point 2",
+                            "- Point 3"
+                        ]
+                    }
+                ]
+            }
+        ]
+      },
+      {
+        "number": 3,
+        "subtitle": "Trends",
+        "content": [
+            {
+                "sections": [
+                    {
+                        "number": 1,
+                        "subtitle": "",
+                        "content": [
+                            "- Point 1",
+                            "- Point 2",
+                            "- Point 3"
+                        ]
+                    },
+                    {
+                        "number": 2,
+                        "subtitle": "",
+                        "content": [
+                            "- Point 1",
+                            "- Point 2",
+                            "- Point 3"
+                        ]
+                    },
+                    {
+                        "number": 3,
+                        "subtitle": "",
+                        "content": [
+                            "- Point 1",
+                            "- Point 2",
+                            "- Point 3"
+                        ]
+                    }
+                ]
+            }
+        ]
+      },
+      {
+        "number": 4,
+        "subtitle": "Stylistic Approach",
+        "content": [
+            {
+                "sections": [
+                    {
+                        "number": 1,
+                        "subtitle": "Oratory Style",
+                        "content": [
+                            "- Point 1",
+                            "- Point 2",
+                            "- Point 3"
+                        ]
+                    },
+                    {
+                        "number": 2,
+                        "subtitle": "Video titles",
+                        "content": [
+                            "- Point 1",
+                            "- Point 2",
+                            "- Point 3"
+                        ]
+                    },
+                    {
+                        "number": 3,
+                        "subtitle": "Descriptions and tags",
+                        "content": [
+                            "- Point 1",
+                            "- Point 2",
+                            "- Point 3"
+                        ]
+                    }
+                ]
+            }
+        ]
+      },
+      {
+        "number": 5,
+        "subtitle": "Recommendations",
+        "content": [
+            {
+                "sections": [
+                    {
+                        "number": 1,
+                        "subtitle": "",
+                        "content": [
+                            "- Point 1",
+                            "- Point 2",
+                            "- Point 3"
+                        ]
+                    },
+                    {
+                        "number": 2,
+                        "subtitle": "",
+                        "content": [
+                            "- Point 1",
+                            "- Point 2",
+                            "- Point 3"
+                        ]
+                    },
+                    {
+                        "number": 3,
+                        "subtitle": "",
+                        "content": [
+                            "- Point 1",
+                            "- Point 2",
+                            "- Point 3"
+                        ]
+                    }
+                ]
+            }
+        ]
+      },
+      {
+        "number": 6,
+        "subtitle": "Limitations",
+        "content": [
+                            "- Point 1",
+                            "- Point 2",
+                            "- Point 3"
+                        ]
+      }
+    ]
+  }
+}

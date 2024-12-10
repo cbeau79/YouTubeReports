@@ -68,7 +68,7 @@ def analyze_watch_history(history_data):
 def generate_channel_report(channel_data):
     # Load JSON report template
     try:
-        with open('json_template_report.json', 'r') as f:
+        with open('json_template_report_v2.json', 'r') as f:
             json_template_report = json.load(f)
     except Exception as e:
         print(f"Error loading template: {e}")
@@ -89,33 +89,43 @@ def generate_channel_report(channel_data):
     <instructions>
         Role: You are a YouTube content consultant.
         Objective:
-            - Analyse the YouTube channel data in <channel_data> and generate a comprehensive report that prioritises actionable insight and clarity.
+            - Analyse the YouTube channel data in <channel_data> and generate a concise report that prioritises actionable insight.
+            - Provide findings in bullet points rather than sentences, such as:
+                Point 1
+                Point 2
+                Point 3
             - Classify the content using the lists in <content_categories> and <video_formats>:
                 1. content_categories: Select up to three categories from <Content Categories> that best describe the channel, ordered by relevance.
                 2. video_formats: Identify the primary video format(s) from <Video Formats>. List up to three formats, in order of prevalence, if multiple are used frequently.
                 3. content_category_justification: Explain in 2–3 sentences why you chose these categories and formats, specifying which content elements informed your selection. 
                 Include this classification in the categorisation section of <return_json_template>.
-        Tone: Write in a clear, structured, and engaging style that appeals to YouTube content creators. Be constructive yet direct, especially when identifying areas for improvement.
+        Tone: Write in a clear, structured, and concise style that appeals to YouTube content creators. Avoid passive phrasing. Be constructive yet direct, especially when identifying areas for improvement.
         Other Instructions:
-            - Highlight specific strengths and areas of improvement.
+            - Highlight specific strengths, weaknesses, and areas of improvement.
             - Support insights and recommendations with concrete data.
-            - Provide thoughtful, detailed answers, and avoid rushing to conclusions.
+            - Provide thoughtful, concise answers, and avoid rushing to conclusions.
+            - Provide your answers in bullet points for each section of the report.
         Report Structure: 
-            1. Executive Summary
-                1. Content summary: Summarise the channel’s content strategy and briefly assess whether it is succeeding or struggling.
+            1. Executive Summary (At least 3 bullet points for each section)
+                1. Content summary: 3 bullet points that answer the following questions:
+                    - What subject matter does this channel use in its content?
+                    - What video formats does this channel use to deliver its content?
+                    - What is the most noteable thing about this channel? If there is nothing noteable, point that out as a failing.
                 2. Channel hosts and personalities: Describe the hosts if they are mentioned in the data. If not, indicate this. Incorporate any relevant external knowledge.
                 3. Channel prominence and competitive landscape: Analyse the channel’s success or limitations in its niche.
-            2. Key Metrics
+            2. Key Metrics (At least 3 bullet points for each section)
                 1. Viewership: List average and median views. Review view counts, likes, and comments for different video types, identifying successful formats or inconsistencies.
                 2. Top-performing content category and video format: Based on <Content Categories> and <Video Formats>, identify the best-performing category and format, using series or franchise names where applicable.
                 3. Publishing frequency: Note the channel’s average weekly uploads and compare with similar channels, listing the primary competitors.
-            3. Trends:
+            3. Trends (At least 3 bullet points for each section):
                 1. Recent trends: List 3 notable content trends evident in the <channel_data>, each with a short sentence of explanation.
                 2. Successful video formats: Explain what the channel's most successful video format is and why it's working for them.
                 3. Trajectory: Analyze whether the channel is growing or shrinking and give some reasoning as to why.
-            4. Oratory Style:
-                - Using subtitle data, provide a three-paragraph analysis of the channel’s oratory style, each paragraph with a sub-heading. Include relevant quotes from subtitles (2–3 sentences each) to illustrate your points.
-            5. Recommendations:
+            4. Stylistic Choices (At least 3 bullet points for each section):
+                1. Oratory style: Using subtitle data, provide 3 bullet points of analysis of the channel’s oratory style. Include relevant quotes from subtitles (2–3 sentences each) to illustrate your points.
+                2. Titles: Using video title data, provide 3 bullet points of analysis of the channels approach to titling its videos.
+                3. Descriptions: Using description data, provide 3 bullet points of analysis of the channels approach to writing descriptions.
+            5. Recommendations (At least 3 bullet points for each section):
                 - Offer three growth recommendations, with data-backed reasoning for each. Focus on strategies for rapid growth, either by refining the current approach or pivoting as needed. Reference strategies used by competitors where applicable.
             6. Limitations:
                 - Highlight any data limitations you identify in <channel_data>.
@@ -186,7 +196,15 @@ def generate_channel_report(channel_data):
 
     print(f"Length of prompt: {prompt_chars} - Estimated token length: {est_tokens}")
 
-    # Interface with OpenAI
+    # Interface with OpenAI - o1-mini
+    '''try:
+        response = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+        )'''
+    
     try:
         response = client.chat.completions.create(
             model=OPENAI_MODEL,
@@ -195,10 +213,12 @@ def generate_channel_report(channel_data):
                 {"role": "system", "content": "You are a helpful YouTube content consultant who responds in JSON."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=8000
+            max_tokens=10000
         )
 
         returned_string = response.choices[0].message.content 
+        with open('output.txt', 'w') as file:
+            file.write(returned_string)
         return returned_string
     except Exception as e:
         print(f"An error occurred while generating the report: {e}")
@@ -368,3 +388,13 @@ def generate_video_summary(video_data):
     {json_template_report}
     </return_json_template>
     """'''
+
+'''    # Interface with OpenAI
+    try:
+        response = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            response_format={ "type": "json_object" },
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+        ){"role": "system", "content": "You are a helpful YouTube content consultant who responds in JSON."},'''

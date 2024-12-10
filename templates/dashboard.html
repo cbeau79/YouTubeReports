@@ -841,7 +841,7 @@ function displayReport(data, container) {
             </div>
             <div class="report-column">
                 ${displaySection(sections[2], 'Trends')}
-                ${displaySection(sections[3], 'Oratory Style')}
+                ${displaySection(sections[3], 'Stylistic Approach')}
                 ${displaySection(sections[5], 'Limitations', true)}
             </div>
         `;
@@ -861,12 +861,29 @@ function displaySection(section, title, isSimple = false) {
 
     let sectionContent = '';
     if (isSimple) {
-        sectionContent = `<p class="report-text">${section.content}</p>`;
+        // For simple sections (like Limitations), render bullet points directly
+        sectionContent = `
+            <ul class="list-disc pl-5 space-y-2">
+                ${Array.isArray(section.content) 
+                    ? section.content.map(point => `
+                        <li class="report-text">${point.replace(/^-\s*/, '')}</li>
+                      `).join('')
+                    : `<li class="report-text">${section.content}</li>`
+                }
+            </ul>`;
     } else {
+        // For nested sections, handle each subsection's bullet points
         sectionContent = section.content[0].sections.map(subsection => `
-            <div class="mb-4">
-                <h4 class="font-semibold text-base lg:text-lg mb-2">${subsection.subtitle}</h4>
-                <p class="report-text">${subsection.content}</p>
+            <div class="mb-6">
+                <h4 class="font-semibold text-base lg:text-lg mb-3">${subsection.subtitle}</h4>
+                <ul class="list-disc pl-5 space-y-2">
+                    ${Array.isArray(subsection.content) 
+                        ? subsection.content.map(point => `
+                            <li class="report-text">${point.replace(/^-\s*/, '')}</li>
+                          `).join('')
+                        : `<li class="report-text">${subsection.content}</li>`
+                    }
+                </ul>
             </div>
         `).join('');
     }

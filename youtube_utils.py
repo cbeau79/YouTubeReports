@@ -320,14 +320,14 @@ def create_temp_cookie_file():
         logging.info(f"Created temporary cookie file: {temp_cookie_file}")
 
         # Full cookie file dump
-        try:
+        '''try:
             logging.info("========== DUMPING COOKIE FILE CONTENTS ==========")
             with open(temp_cookie_file, 'r', encoding='utf-8') as f:
                 for line_num, line in enumerate(f, 1):
                     logging.info(f"Line {line_num}: {line.rstrip()}")
             logging.info("================ END COOKIE DUMP ================")
         except Exception as e:
-            logging.error(f"Failed to dump cookie file contents: {str(e)}")
+            logging.error(f"Failed to dump cookie file contents: {str(e)}")'''
 
         return temp_cookie_file
         
@@ -442,6 +442,9 @@ def get_video_subtitles(video_id):
                 logging.warning(f"Non-critical error during cleanup: {str(e)}")
                 # Continue anyway - cleanup failure shouldn't invalidate successful subtitle extraction
 
+    with open('subtitles.txt', 'w') as file:
+        file.write(subtitles_text)
+
     return subtitles_text  # Return whatever we got, even if cleanup failed
 
 def clean_subtitle_text(subtitle_content):
@@ -528,6 +531,7 @@ def fetch_channel_data(channel_id):
                 'channel_id': channel_id,
                 'title': channel_info['snippet']['title'],
                 'description': channel_info['snippet']['description'],
+                'launch_date': channel_info['snippet']['publishedAt'],
                 'subscriber_count': channel_info['statistics']['subscriberCount'],
                 'total_view_count': channel_info['statistics']['viewCount'],
                 'total_video_count': channel_info['statistics']['videoCount'],

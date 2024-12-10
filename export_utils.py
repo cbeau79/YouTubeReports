@@ -164,8 +164,7 @@ def generate_video_summary_pdf(summary_data, raw_video_data):
         raise
 
 def generate_channel_report_markdown(report_data, raw_channel_data):
-    """Generate Markdown for channel report with enhanced formatting including banner, 
-    panel headers and categorization"""
+    """Generate Markdown for channel report"""
     # Load JSON data
     if isinstance(report_data, str):
         report = json.loads(report_data)
@@ -179,64 +178,54 @@ def generate_channel_report_markdown(report_data, raw_channel_data):
 
     markdown = []
     
-    # Banner (as a link to make it clickable)
-    if channel_data.get('banner_url'):
-        banner_url = f"{channel_data['banner_url']}=w2120-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj"
-        markdown.append(f"[![Channel Banner]({banner_url})]({banner_url})\n")
-
     # Title and Channel Info
     markdown.append(f"# Channel Analysis: {channel_data['title']}\n")
-    
-    # Categories and Formats (if available in the report)
-    categorization = report['consultation_report'].get('categorisation', [{}])[0]
-    if categorization:
-        if categorization.get('content_categories'):
-            markdown.append("### Content Categories")
-            for category in categorization['content_categories']:
-                markdown.append(f"- {category}")
-            markdown.append("")  # Empty line for spacing
-
-        if categorization.get('video_formats'):
-            markdown.append("### Video Formats")
-            for format in categorization['video_formats']:
-                markdown.append(f"- {format}")
-            markdown.append("")
-
-        if categorization.get('content_category_justification'):
-            markdown.append("### Category Justification")
-            markdown.append(categorization['content_category_justification'])
-            markdown.append("")
-
-    # Channel Statistics
-    markdown.append("## Channel Statistics")
+    markdown.append("## Channel Statistics\n")
     markdown.append(f"- Subscribers: {channel_data['subscriber_count']}")
     markdown.append(f"- Total Views: {channel_data['total_view_count']}")
     markdown.append(f"- Videos: {channel_data['total_video_count']}\n")
 
-    # Process report sections with clear headers
-    panel_headers = {
-        1: "Executive Summary",
-        2: "Key Metrics",
-        3: "Trends",
-        4: "Oratory Style",
-        5: "Recommendations",
-        6: "Limitations"
-    }
-
+    # Process report sections
     for section in report['consultation_report']['sections']:
-        section_number = section.get('number')
-        if section_number in panel_headers:
-            markdown.append(f"# {panel_headers[section_number]}")
-            markdown.append("---\n")  # Horizontal rule for visual separation
-
         if isinstance(section['content'], list) and section['content']:
             # Handle nested sections
+            markdown.append(f"## {section['subtitle']}\n")
             for subsection in section['content'][0]['sections']:
                 if subsection['content']:
-                    markdown.append(f"## {subsection['subtitle']}")
-                    markdown.append(f"{subsection['content']}\n")
-        elif section['content']:
-            markdown.append(f"{section['content']}\n")
+                    markdown.append(f"### {subsection['subtitle']}\n")
+                    # Handle content that might be a string or a list
+                    if isinstance(subsection['content'], list):
+                        markdown.append('\n'.join(subsection['content']) + '\n')
+                    else:
+                        markdown.append(f"{subsection['content']}\n")
+        elif section['content']:  # Direct content (like limitations)
+            markdown.append(f"## {section['subtitle']}\n")
+            # Handle content that might be a string or a list
+            if isinstance(section['content'], list):
+                markdown.append('\n'.join(section['content']) + '\n')
+            else:
+                markdown.append(f"{section['content']}\n")
+
+    # Add categorization if available
+    if 'categorisation' in report['consultation_report']:
+        markdown.append("## Content Categories\n")
+        cats = report['consultation_report']['categorisation'][0]
+        
+        if cats.get('content_categories'):
+            markdown.append("### Primary Categories\n")
+            for cat in cats['content_categories']:
+                markdown.append(f"- {cat}")
+            markdown.append("")
+        
+        if cats.get('video_formats'):
+            markdown.append("### Video Formats\n")
+            for format in cats['video_formats']:
+                markdown.append(f"- {format}")
+            markdown.append("")
+        
+        if cats.get('content_category_justification'):
+            markdown.append("### Justification\n")
+            markdown.append(cats['content_category_justification'] + "\n")
 
     return "\n".join(markdown)
 
@@ -255,51 +244,46 @@ def generate_video_summary_markdown(summary_data, raw_video_data):
 
     markdown = []
     
-    # Title
-    markdown.append(f"# {summary['title']}\n")
-    
-    # Video thumbnail as a clickable link
-    video_id = video_data['youtube_video_id']
-    video_url = f"https://www.youtube.com/watch?v={video_id}"
-    thumbnail_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
-    
-    markdown.append(f"[![{summary['title']}]({thumbnail_url})]({video_url})\n")
-    markdown.append(f"🎥 [Watch on YouTube]({video_url})\n")
-    
-    # Stats
+    # Title and Video Info
+    markdown.append(f"# Video Summary: {summary['title']}\n")
+    markdown.append("## Video Statistics\n")
     markdown.append(f"- Views: {video_data['views']}")
     markdown.append(f"- Likes: {video_data['like_count']}")
     markdown.append(f"- Comments: {video_data['comment_count']}")
+    markdown.append(f"- Published: {video_data['date_published']}\n")
 
     # Overview
     markdown.append("## Overview\n")
-    markdown.append(f"{summary['overview']}")
+    markdown.append(f"{summary['overview']}\n")
 
     # Key Points
     markdown.append("## Key Points\n")
     for point in summary['key_points']:
         markdown.append(f"### {point['point_title']}")
-        markdown.append(f"{point['point_description']}")
+        markdown.append(f"{point['point_description']}\n")
 
-    # Discourse Section
-    markdown.append("## Discourse\n")
+    # Engagement Analysis
+    markdown.append("## Engagement Analysis\n")
+    markdown.append(f"{summary['engagement_analysis']}\n")
+
+    # Discourse Summary
+    markdown.append("## Discourse Summary\n")
     markdown.append(f"{summary['discourse_summary']}\n")
+
+    # Discourse Themes
+    markdown.append("## Discussion Themes\n")
     for theme in summary['discourse_themes']:
         markdown.append(f"### {theme['theme_title']}")
-        markdown.append(f"{theme['theme_description']}")
+        markdown.append(f"{theme['theme_description']}\n")
 
     # Target Audience
     markdown.append("## Target Audience\n")
-    markdown.append(f"{summary['target_audience']}")
-
-    # Engagement Analysis
-    markdown.append("## Engagement\n")
-    markdown.append(f"{summary['engagement_analysis']}")
+    markdown.append(f"{summary['target_audience']}\n")
 
     # Improvement Suggestions
-    markdown.append("## Improvement Suggestions")
+    markdown.append("## Improvement Suggestions\n")
     for suggestion in summary['improvement_suggestions']:
         markdown.append(f"### {suggestion['improvement_title']}")
-        markdown.append(f"{suggestion['improvement_description']}")
+        markdown.append(f"{suggestion['improvement_description']}\n")
 
     return "\n".join(markdown)
