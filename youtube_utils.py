@@ -390,7 +390,6 @@ def get_video_subtitles(video_id):
                 'writesubtitles': True,
                 'writeautomaticsub': True,
                 'subtitleslangs': ['en', 'en-US'],
-                'subtitlesformat': 'vtt',
                 'outtmpl': os.path.join(temp_dir, '%(id)s.%(ext)s')
             })
             
